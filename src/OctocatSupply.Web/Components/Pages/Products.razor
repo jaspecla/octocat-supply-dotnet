@@ -3,6 +3,7 @@
 @implements IDisposable
 @inject ThemeService ThemeService
 @inject ApiService ApiService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Products</PageTitle>
 
@@ -253,12 +254,13 @@ else
         quantities[productId] = Math.Max(0, current + change);
     }
 
-    private void HandleAddToCart(int productId)
+    private async Task HandleAddToCart(int productId)
     {
         // TODO: Implement cart functionality
         var quantity = GetQuantity(productId);
         if (quantity > 0)
         {
+            await JSRuntime.InvokeVoidAsync("alert", $"Added {quantity} items to cart");
             quantities[productId] = 0;
         }
     }
