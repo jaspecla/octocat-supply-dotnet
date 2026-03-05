@@ -1,0 +1,23 @@
+@inherits LayoutComponentBase
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<div class="@(ThemeService.DarkMode ? "bg-dark text-gray-100" : "bg-gray-100 text-gray-800") flex flex-col min-h-screen transition-colors duration-300">
+    <NavMenu />
+    <main class="flex-grow">
+        @Body
+    </main>
+    <Footer />
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ThemeService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnChange -= StateHasChanged;
+    }
+}

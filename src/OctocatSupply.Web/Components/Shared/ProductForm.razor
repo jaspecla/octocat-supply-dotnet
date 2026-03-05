@@ -1,0 +1,159 @@
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@using OctocatSupply.Web.Components.Pages.Admin
+@inject ThemeService ThemeService
+@inject IHttpClientFactory HttpClientFactory
+@implements IDisposable
+
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg p-6 w-full max-w-md shadow-xl transition-colors duration-300")">
+        <h2 class="@($"text-2xl font-bold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} mb-4 transition-colors duration-300")">
+            @(Product != null ? "Edit Product" : "Add New Product")
+        </h2>
+        <EditForm Model="formData" OnValidSubmit="HandleSubmit" class="space-y-4">
+            <div>
+                <label class="@GetLabelClass()">Name</label>
+                <input type="text" @bind="formData.Name"
+                       class="@GetInputClass()" required />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Description</label>
+                <textarea @bind="formData.Description"
+                          class="@GetInputClass()" required />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Price</label>
+                <input type="number" @bind="formData.Price"
+                       class="@GetInputClass()" required min="0" step="0.01" />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">SKU</label>
+                <input type="text" @bind="formData.Sku"
+                       class="@GetInputClass()" required />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Unit</label>
+                <input type="text" @bind="formData.Unit"
+                       class="@GetInputClass()" required />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Image Name</label>
+                <input type="text" @bind="formData.ImgName"
+                       class="@GetInputClass()" required />
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Supplier</label>
+                <select @bind="formData.SupplierId"
+                        class="@GetInputClass()" required>
+                    @foreach (var supplier in Suppliers)
+                    {
+                        <option value="@supplier.SupplierId">@supplier.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="@GetLabelClass()">Discount (%)</label>
+                <input type="number" @bind="discountPercent"
+                       placeholder="Enter discount percentage (e.g. 25 for 25%)"
+                       class="@GetInputClass()" min="0" max="100" step="1" />
+                <p class="@($"text-xs mt-1 {(ThemeService.DarkMode ? "text-gray-400" : "text-gray-500")}")">
+                    Leave empty for no discount
+                </p>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" @onclick="OnClose"
+                        class="@($"px-4 py-2 {(ThemeService.DarkMode ? "bg-gray-600 text-white hover:bg-gray-500" : "bg-gray-300 text-gray-800 hover:bg-gray-400")} rounded transition-colors duration-300")">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-primary text-white rounded hover:bg-accent transition-colors duration-300">
+                    @(Product != null ? "Update" : "Create")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public AdminProducts.Product? Product { get; set; }
+    [Parameter] public List<AdminProducts.Supplier> Suppliers { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+
+    private AdminProducts.Product formData = new();
+    private decimal? discountPercent;
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnChange += OnThemeChanged;
+
+        if (Product != null)
+        {
+            formData = new AdminProducts.Product
+            {
+                ProductId = Product.ProductId,
+                SupplierId = Product.SupplierId,
+                Name = Product.Name,
+                Description = Product.Description,
+                Price = Product.Price,
+                Sku = Product.Sku,
+                Unit = Product.Unit,
+                ImgName = Product.ImgName,
+                Discount = Product.Discount
+            };
+            discountPercent = Product.Discount.HasValue ? Product.Discount.Value * 100 : null;
+        }
+        else
+        {
+            formData = new AdminProducts.Product
+            {
+                SupplierId = Suppliers.FirstOrDefault()?.SupplierId ?? 0
+            };
+            discountPercent = null;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            formData.Discount = discountPercent.HasValue ? discountPercent.Value / 100 : null;
+
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri("http://localhost:3001/api/");
+
+            if (Product != null)
+            {
+                await client.PutAsJsonAsync($"products/{Product.ProductId}", formData);
+            }
+            else
+            {
+                await client.PostAsJsonAsync("products", formData);
+            }
+
+            await OnSave.InvokeAsync();
+            await OnClose.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving product: {ex.Message}");
+        }
+    }
+
+    private string GetLabelClass()
+    {
+        return $"block {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} mb-1 transition-colors duration-300";
+    }
+
+    private string GetInputClass()
+    {
+        return $"w-full px-3 py-2 {(ThemeService.DarkMode ? "bg-gray-700 text-light" : "bg-gray-100 text-gray-800")} rounded transition-colors duration-300";
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        ThemeService.OnChange -= OnThemeChanged;
+    }
+}

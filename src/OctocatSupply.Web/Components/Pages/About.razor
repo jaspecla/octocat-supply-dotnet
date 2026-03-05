@@ -1,0 +1,125 @@
+@page "/about"
+@rendermode InteractiveServer
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<PageTitle>About - OctoCAT Supply</PageTitle>
+
+<div class="@(ThemeService.DarkMode ? "bg-dark text-light" : "bg-white text-gray-800") min-h-screen transition-colors duration-300">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+        @* Page Title *@
+        <h1 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-4xl font-bold mb-8 text-center transition-colors duration-300">
+            About <span class="text-primary">OctoCAT Supply</span>
+        </h1>
+
+        @* Company Story *@
+        <div class="@(ThemeService.DarkMode ? "bg-gray-800 border-primary/20" : "bg-white border-gray-200") rounded-lg shadow-lg p-8 border mb-12 transition-colors duration-300">
+            <p class="@(ThemeService.DarkMode ? "text-gray-300" : "text-gray-700") text-lg leading-relaxed mb-6 transition-colors duration-300">
+                Welcome to OctoCAT Supply, your premier destination for AI-powered smart products
+                designed specifically for your feline companions. Our cutting-edge cat tech innovations
+                bring together the latest in artificial intelligence, sensor technology, and
+                pet-friendly design to enhance the bond between you and your cat.
+            </p>
+            <p class="@(ThemeService.DarkMode ? "text-gray-400" : "text-gray-500") text-sm italic transition-colors duration-300">
+                OctoCAT Supply is a fictional company created for GitHub Copilot demonstration purposes,
+                showcasing how AI-assisted development can accelerate building modern web applications.
+            </p>
+        </div>
+
+        @* Mission Statement *@
+        <div class="mb-16 text-center">
+            <h2 class="text-2xl font-bold text-primary mb-4">Our Meow-ssion</h2>
+            <div class="@(ThemeService.DarkMode ? "bg-gray-800" : "bg-gray-50") rounded-lg p-8 shadow-md transition-colors duration-300">
+                <p class="@(ThemeService.DarkMode ? "text-gray-200" : "text-gray-700") text-xl italic leading-relaxed transition-colors duration-300">
+                    "To enhance the lives of cats and their humans through innovative technology."
+                </p>
+                <p class="@(ThemeService.DarkMode ? "text-gray-400" : "text-gray-600") mt-4 transition-colors duration-300">
+                    We believe cats deserve the same technological innovations that humans enjoy. Our team
+                    of feline behavior specialists, engineers, and AI experts work together to create products
+                    that understand, respond to, and improve your cat's daily life.
+                </p>
+            </div>
+        </div>
+
+        @* Values Section *@
+        <div class="mb-16">
+            <h2 class="text-2xl font-bold text-primary mb-8 text-center">Our Values</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach (var value in _values)
+                {
+                    <div class="@(ThemeService.DarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200") rounded-lg p-6 border shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-3xl">@value.Icon</span>
+                            <h3 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-xl font-bold transition-colors duration-300">
+                                @value.Title
+                            </h3>
+                        </div>
+                        <p class="@(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600") transition-colors duration-300">
+                            @value.Description
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Key Features *@
+        <div class="mb-16">
+            <h2 class="text-2xl font-bold text-primary mb-6 text-center">Key Features of Our Products</h2>
+            <div class="@(ThemeService.DarkMode ? "bg-gray-800" : "bg-white") rounded-lg p-8 shadow-lg transition-colors duration-300">
+                <ul class="@(ThemeService.DarkMode ? "text-gray-300" : "text-gray-700") space-y-3 list-disc list-inside transition-colors duration-300">
+                    <li>AI-powered behavior analysis and personalization</li>
+                    <li>Real-time health monitoring and wellness alerts</li>
+                    <li>Multi-cat household compatibility</li>
+                    <li>Smartphone integration with detailed analytics</li>
+                    <li>Energy-efficient and eco-friendly materials</li>
+                    <li>Sleek, modern designs that complement your home</li>
+                </ul>
+            </div>
+        </div>
+
+        @* Founder Quote *@
+        <div class="@(ThemeService.DarkMode ? "bg-gray-700" : "bg-gray-200") rounded-lg p-6 mb-16 transition-colors duration-300">
+            <p class="@(ThemeService.DarkMode ? "text-gray-200" : "text-gray-700") italic text-lg transition-colors duration-300">
+                "Our cats tested every product in our catalog extensively. Only the ones they couldn't
+                stop using made it to production."
+            </p>
+            <p class="text-primary font-semibold mt-2">— Felix Whiskerton, Founder</p>
+        </div>
+
+        @* Team Section *@
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-primary mb-4">Our Team</h2>
+            <div class="@(ThemeService.DarkMode ? "bg-gray-800 border-primary/20" : "bg-white border-gray-200") rounded-lg p-8 border shadow-lg transition-colors duration-300">
+                <p class="@(ThemeService.DarkMode ? "text-gray-300" : "text-gray-700") leading-relaxed transition-colors duration-300">
+                    OctoCAT Supply is a demonstration project built to showcase the power of
+                    <span class="text-primary font-semibold">GitHub Copilot</span> in modern software development.
+                    Rather than a real team, this project is maintained by developers exploring AI-assisted coding,
+                    from full-stack web apps to cloud infrastructure — all with a feline twist. 🐱
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record ValueCard(string Icon, string Title, string Description);
+
+    private readonly List<ValueCard> _values = new()
+    {
+        new("💡", "Innovation", "Pushing the boundaries of feline technology"),
+        new("⭐", "Quality", "Premium products that stand the test of time (and claws)"),
+        new("🌱", "Sustainability", "Eco-friendly solutions for a greener paw print"),
+        new("🤝", "Community", "Building a network of cat lovers and tech enthusiasts")
+    };
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnChange -= StateHasChanged;
+    }
+}

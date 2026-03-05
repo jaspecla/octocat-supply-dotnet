@@ -1,0 +1,94 @@
+@page "/login"
+@rendermode InteractiveServer
+@inject AuthService AuthService
+@inject ThemeService ThemeService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>Login</PageTitle>
+
+<div class="@($"min-h-screen pt-20 {(ThemeService.DarkMode ? "bg-dark" : "bg-gray-100")} flex items-center justify-center px-4 transition-colors duration-300")">
+    <div class="@($"max-w-md w-full {(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg shadow-lg p-8 transition-colors duration-300")">
+        <h2 class="@($"text-3xl font-bold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} mb-6 transition-colors duration-300")">
+            Login
+        </h2>
+
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="bg-red-500/10 border border-red-500 text-red-500 rounded-md p-3 mb-4">
+                @((MarkupString)error)
+            </div>
+        }
+
+        <EditForm Model="@this" OnValidSubmit="HandleSubmit" FormName="login" class="space-y-6">
+            <div>
+                <label for="email"
+                       class="@($"block {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} mb-2 transition-colors duration-300")">
+                    Email Address
+                </label>
+                <input id="email"
+                       type="email"
+                       @bind="email"
+                       class="@($"w-full {(ThemeService.DarkMode ? "bg-gray-700 text-light" : "bg-gray-100 text-gray-800")} rounded px-3 py-2 transition-colors duration-300")"
+                       required
+                       autofocus />
+            </div>
+
+            <div>
+                <label for="password"
+                       class="@($"block {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} mb-2 transition-colors duration-300")">
+                    Password
+                </label>
+                <input id="password"
+                       type="password"
+                       @bind="password"
+                       class="@($"w-full {(ThemeService.DarkMode ? "bg-gray-700 text-light" : "bg-gray-100 text-gray-800")} rounded px-3 py-2 transition-colors duration-300")"
+                       required />
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-primary hover:bg-accent text-white py-2 px-4 rounded transition-colors">
+                Login
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string error = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnChange += StateHasChanged;
+        ThemeService.OnChange += StateHasChanged;
+
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var errorMsg = query["error"];
+        if (!string.IsNullOrEmpty(errorMsg))
+        {
+            error = errorMsg;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            await AuthService.Login(email, password);
+            NavigationManager.NavigateTo("/");
+        }
+        catch
+        {
+            error = "Login failed. Please try again.";
+        }
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnChange -= StateHasChanged;
+        ThemeService.OnChange -= StateHasChanged;
+    }
+}

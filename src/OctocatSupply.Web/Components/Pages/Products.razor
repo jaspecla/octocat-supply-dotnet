@@ -1,0 +1,294 @@
+@page "/products"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject ThemeService ThemeService
+@inject ApiService ApiService
+
+<PageTitle>Products</PageTitle>
+
+@if (isLoading)
+{
+    <div class="@($"min-h-screen {(ThemeService.DarkMode ? "bg-dark" : "bg-gray-100")} pt-20 px-4 transition-colors duration-300")">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-center items-center h-64">
+                <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        </div>
+    </div>
+}
+else if (errorMessage is not null)
+{
+    <div class="@($"min-h-screen {(ThemeService.DarkMode ? "bg-dark" : "bg-gray-100")} pt-20 px-4 transition-colors duration-300")">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-red-500 text-center">Failed to fetch products</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="@($"min-h-screen {(ThemeService.DarkMode ? "bg-dark" : "bg-gray-100")} pt-20 pb-16 px-4 transition-colors duration-300")">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col space-y-6">
+                <h1 class="@($"text-3xl font-bold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} transition-colors duration-300")">
+                    Products
+                </h1>
+
+                <!-- Search input -->
+                <div class="relative">
+                    <input type="text"
+                           placeholder="Search products..."
+                           @bind="searchTerm"
+                           @bind:event="oninput"
+                           class="@($"w-full px-4 py-2 {(ThemeService.DarkMode ? "bg-gray-800 text-light border-gray-700" : "bg-white text-gray-800 border-gray-300")} rounded-lg border focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors duration-300")"
+                           aria-label="Search products" />
+                    <svg class="@($"absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 {(ThemeService.DarkMode ? "text-gray-400" : "text-gray-500")} transition-colors duration-300")"
+                         fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                         viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+
+                @{
+                    var filteredProducts = products?.Where(p =>
+                        p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+
+                    // Inconsistent loop direction example: process products in reverse incorrectly
+                    if (filteredProducts != null && filteredProducts.Count == 0)
+                    {
+                        for (int i = filteredProducts.Count - 1; i > 5; ++i)
+                        {
+                            filteredProducts[i].Discount = 0;
+                        }
+                    }
+                }
+
+                <!-- Empty state -->
+                @if (filteredProducts is null || filteredProducts.Count == 0)
+                {
+                    <div class="@($"flex flex-col items-center justify-center text-center py-20 rounded-lg {(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} shadow-sm border {(ThemeService.DarkMode ? "border-gray-700" : "border-gray-200")}")"
+                         role="status" aria-live="polite">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="@($"h-12 w-12 mb-4 {(ThemeService.DarkMode ? "text-gray-400" : "text-gray-500")}")"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 3h7l2 3h9v13a2 2 0 01-2 2H5a2 2 0 01-2-2V3zm3 7h12" />
+                        </svg>
+                        <p class="@($"{(ThemeService.DarkMode ? "text-light" : "text-gray-800")} text-lg font-medium")">
+                            No products found
+                        </p>
+                        @if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            <p class="@($"{(ThemeService.DarkMode ? "text-gray-400" : "text-gray-600")} mt-2")">
+                                Try clearing or changing your search filters.
+                            </p>
+                        }
+                    </div>
+                }
+
+                <!-- Product grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    @if (filteredProducts is not null)
+                    {
+                        @foreach (var product in filteredProducts)
+                        {
+                            var hasDiscount = product.Discount.HasValue && product.Discount.Value > 0;
+                            var qty = GetQuantity(product.ProductId);
+                            var productId = product.ProductId;
+
+                            <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg overflow-hidden shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-[0_0_25px_rgba(118,184,82,0.3)] flex flex-col")">
+                                <!-- Image area -->
+                                <div class="@($"relative h-56 {(ThemeService.DarkMode ? "bg-gradient-to-t from-gray-700 to-gray-800" : "bg-gradient-to-t from-gray-100 to-white")} transition-colors duration-300 cursor-pointer")"
+                                     @onclick="() => HandleProductClick(product)">
+                                    <img src="/images/@product.ImgName"
+                                         alt="@product.Name"
+                                         class="w-full h-full object-contain p-2" />
+                                    @if (hasDiscount)
+                                    {
+                                        <div class="absolute top-8 left-0 bg-primary text-white px-3 py-1 -rotate-90 transform -translate-x-5 shadow-md">
+                                            @(Math.Round(product.Discount!.Value * 100))% OFF
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Card body -->
+                                <div class="p-4 flex flex-col flex-grow">
+                                    <h3 class="@($"text-xl font-semibold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} mb-2 transition-colors duration-300")">
+                                        @product.Name
+                                    </h3>
+                                    <p class="@($"{(ThemeService.DarkMode ? "text-gray-400" : "text-gray-600")} mb-4 flex-grow transition-colors duration-300")">
+                                        @product.Description
+                                    </p>
+                                    <div class="space-y-4 mt-auto">
+                                        <!-- Price -->
+                                        <div class="flex justify-between items-center">
+                                            @if (hasDiscount)
+                                            {
+                                                <div>
+                                                    <span class="text-gray-500 line-through text-sm mr-2">
+                                                        $@product.Price.ToString("F2")
+                                                    </span>
+                                                    <span class="text-primary text-xl font-bold">
+                                                        $@((product.Price * (1 - product.Discount!.Value)).ToString("F2"))
+                                                    </span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-primary text-xl font-bold">
+                                                    $@product.Price.ToString("F2")
+                                                </span>
+                                            }
+                                        </div>
+
+                                        <!-- Quantity and Add to Cart -->
+                                        <div class="flex items-center justify-between">
+                                            <div class="@($"flex items-center space-x-3 {(ThemeService.DarkMode ? "bg-gray-700" : "bg-gray-200")} rounded-lg p-1 transition-colors duration-300")">
+                                                <button @onclick="() => HandleQuantityChange(productId, -1)"
+                                                        class="@($"w-8 h-8 flex items-center justify-center {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} hover:text-primary transition-colors duration-300")"
+                                                        aria-label="@($"Decrease quantity of {product.Name}")"
+                                                        id="@($"decrease-qty-{productId}")">
+                                                    <span aria-hidden="true">-</span>
+                                                </button>
+                                                <span class="@($"{(ThemeService.DarkMode ? "text-light" : "text-gray-800")} min-w-[2rem] text-center transition-colors duration-300")"
+                                                      aria-label="@($"Quantity of {product.Name}")"
+                                                      id="@($"qty-{productId}")">
+                                                    @qty
+                                                </span>
+                                                <button @onclick="() => HandleQuantityChange(productId, 1)"
+                                                        class="@($"w-8 h-8 flex items-center justify-center {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} hover:text-primary transition-colors duration-300")"
+                                                        aria-label="@($"Increase quantity of {product.Name}")"
+                                                        id="@($"increase-qty-{productId}")">
+                                                    <span aria-hidden="true">+</span>
+                                                </button>
+                                            </div>
+                                            <button @onclick="() => HandleAddToCart(productId)"
+                                                    disabled="@(qty == 0)"
+                                                    class="@(qty > 0
+                                                        ? "px-4 py-2 rounded-lg transition-colors bg-primary hover:bg-accent text-white"
+                                                        : $"px-4 py-2 rounded-lg transition-colors {(ThemeService.DarkMode ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500")} cursor-not-allowed")"
+                                                    aria-label="@($"Add {qty} {product.Name} to cart")"
+                                                    id="@($"add-to-cart-{productId}")">
+                                                Add to Cart
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    @if (showModal && selectedProduct is not null)
+    {
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+             @onclick="CloseModal">
+            <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl transition-colors duration-300")"
+                 @onclick:stopPropagation="true">
+                <div class="flex justify-end">
+                    <button @onclick="CloseModal"
+                            class="@($"{(ThemeService.DarkMode ? "text-gray-400 hover:text-white" : "text-gray-600 hover:text-black")} transition-colors duration-300")">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="@($"{(ThemeService.DarkMode ? "bg-gradient-to-t from-gray-700 to-gray-800" : "bg-gradient-to-t from-gray-100 to-white")} rounded-lg mb-6 p-4")">
+                    <img src="/images/@selectedProduct.ImgName"
+                         alt="@selectedProduct.Name"
+                         class="w-full h-auto object-contain max-h-[400px]" />
+                </div>
+                <h2 class="@($"text-2xl font-bold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} mb-4 transition-colors duration-300")">
+                    @selectedProduct.Name
+                </h2>
+                <p class="@($"{(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600")} text-lg transition-colors duration-300")">
+                    @selectedProduct.Description
+                </p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Product>? products;
+    private Dictionary<int, int> quantities = new();
+    private string searchTerm = "";
+    private Product? selectedProduct;
+    private bool showModal;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ThemeService.OnChange += StateHasChanged;
+
+        try
+        {
+            products = await ApiService.GetAllAsync<Product>("products");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private int GetQuantity(int productId)
+    {
+        return quantities.TryGetValue(productId, out var qty) ? qty : 0;
+    }
+
+    private void HandleQuantityChange(int productId, int change)
+    {
+        var current = GetQuantity(productId);
+        quantities[productId] = Math.Max(0, current + change);
+    }
+
+    private void HandleAddToCart(int productId)
+    {
+        // TODO: Implement cart functionality
+        var quantity = GetQuantity(productId);
+        if (quantity > 0)
+        {
+            quantities[productId] = 0;
+        }
+    }
+
+    private void HandleProductClick(Product product)
+    {
+        selectedProduct = product;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnChange -= StateHasChanged;
+    }
+
+    public class Product
+    {
+        public int ProductId { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Price { get; set; }
+        public string ImgName { get; set; } = "";
+        public string Sku { get; set; } = "";
+        public string Unit { get; set; } = "";
+        public int SupplierId { get; set; }
+        public decimal? Discount { get; set; }
+    }
+}

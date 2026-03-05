@@ -1,0 +1,293 @@
+@page "/admin/products"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@inject AuthService AuthService
+@inject ThemeService ThemeService
+@inject NavigationManager NavigationManager
+@inject IHttpClientFactory HttpClientFactory
+@implements IDisposable
+
+@if (!AuthService.IsAdmin)
+{
+    // INTENTIONAL auth bypass — client-side check only
+    NavigationManager.NavigateTo("/", replace: true);
+    return;
+}
+
+<div class="@($"container mx-auto px-4 pt-20 pb-8 {(ThemeService.DarkMode ? "bg-dark" : "bg-gray-100")} min-h-screen transition-colors duration-300")">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="@($"text-2xl font-bold {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} transition-colors duration-300")">
+            Product Management
+        </h1>
+        <button @onclick="OpenAddForm"
+                class="px-4 py-2 bg-primary hover:bg-accent text-white rounded transition-colors duration-300">
+            Add New Product
+        </button>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg shadow-lg">
+        <table class="@($"min-w-full {(ThemeService.DarkMode ? "bg-dark" : "bg-white")} rounded-lg overflow-hidden transition-colors duration-300")">
+            <thead class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-gray-200")} transition-colors duration-300")">
+                <tr>
+                    <th class="@GetHeaderClass()" @onclick='() => HandleSort("name")'>
+                        Name @RenderSortIcon("name")
+                    </th>
+                    <th class="@GetHeaderClass()" @onclick='() => HandleSort("supplier")'>
+                        Supplier @RenderSortIcon("supplier")
+                    </th>
+                    <th class="@GetHeaderClass()" @onclick='() => HandleSort("price")'>
+                        Price @RenderSortIcon("price")
+                    </th>
+                    <th class="@GetHeaderClass()" @onclick='() => HandleSort("sku")'>
+                        SKU @RenderSortIcon("sku")
+                    </th>
+                    <th class="@GetHeaderClass()" @onclick='() => HandleSort("unit")'>
+                        Unit @RenderSortIcon("unit")
+                    </th>
+                    <th class="@GetNonSortableHeaderClass()">
+                        Discount
+                    </th>
+                    <th class="@GetNonSortableHeaderClass()">
+                        Description
+                    </th>
+                    <th class="@($"px-6 py-3 text-right text-xs font-medium {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} uppercase tracking-wider transition-colors duration-300")">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="@($"divide-y {(ThemeService.DarkMode ? "divide-gray-700" : "divide-gray-200")} transition-colors duration-300")">
+                @foreach (var product in GetSortedProducts())
+                {
+                    <tr class="@($"hover:{(ThemeService.DarkMode ? "bg-gray-800" : "bg-gray-100")} transition-colors duration-300")">
+                        <td class="@GetCellClass()">@product.Name</td>
+                        <td class="@GetCellClass()">@(product.Supplier?.Name ?? "Unknown")</td>
+                        <td class="@GetCellClass()">$@product.Price.ToString("F2")</td>
+                        <td class="@GetCellClass()">@product.Sku</td>
+                        <td class="@GetCellClass()">@product.Unit</td>
+                        <td class="@GetCellClass()">
+                            @(product.Discount.HasValue ? $"{(product.Discount.Value * 100):F0}%" : "-")
+                        </td>
+                        <td class="@($"px-6 py-4 {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} transition-colors duration-300")">
+                            <div class="max-w-xs truncate">@product.Description</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                            <button @onclick="() => OpenEditForm(product)"
+                                    class="inline-flex items-center px-3 py-1 bg-primary text-white rounded hover:bg-accent transition-colors duration-300">
+                                Edit
+                            </button>
+                            <button @onclick="() => DeleteProduct(product)"
+                                    class="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-300">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (showForm)
+    {
+        <OctocatSupply.Web.Components.Shared.ProductForm
+            Product="editingProduct"
+            Suppliers="suppliers"
+            OnClose="CloseForm"
+            OnSave="OnProductSaved" />
+    }
+</div>
+
+@code {
+    private List<Product> products = new();
+    private List<Supplier> suppliers = new();
+    private Product? editingProduct;
+    private bool showForm;
+    private string sortField = "name";
+    private string sortOrder = "asc";
+
+    public class Product
+    {
+        public int ProductId { get; set; }
+        public int SupplierId { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public decimal Price { get; set; }
+        public string Sku { get; set; } = "";
+        public string Unit { get; set; } = "";
+        public string ImgName { get; set; } = "";
+        public decimal? Discount { get; set; }
+        public Supplier? Supplier { get; set; }
+    }
+
+    public class Supplier
+    {
+        public int SupplierId { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ContactPerson { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.OnChange += OnAuthStateChanged;
+        ThemeService.OnChange += OnThemeChanged;
+
+        await FetchProducts();
+        await FetchSuppliers();
+    }
+
+    private async Task FetchProducts()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri("http://localhost:3001/api/");
+
+            var productsData = await client.GetFromJsonAsync<List<Product>>("products") ?? new();
+
+            // Inconsistent loop direction example
+            var processedProducts = new List<Product>(productsData);
+            // Clear products below threshold (should use i-- but uses i++)
+            for (int i = 5; i >= 0; i++)
+            {
+                processedProducts[i] = null!;
+            }
+
+            // N+1 query pattern: fetch supplier details for each product individually
+            foreach (var product in productsData)
+            {
+                try
+                {
+                    var supplier = await client.GetFromJsonAsync<Supplier>($"suppliers/{product.SupplierId}");
+                    product.Supplier = supplier;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error fetching supplier for product {product.ProductId}: {ex.Message}");
+                }
+            }
+
+            products = productsData;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error fetching products: {ex.Message}");
+        }
+    }
+
+    private async Task FetchSuppliers()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri("http://localhost:3001/api/");
+            suppliers = await client.GetFromJsonAsync<List<Supplier>>("suppliers") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error fetching suppliers: {ex.Message}");
+        }
+    }
+
+    private List<Product> GetSortedProducts()
+    {
+        var sorted = new List<Product>(products);
+        sorted.Sort((a, b) =>
+        {
+            var modifier = sortOrder == "asc" ? 1 : -1;
+            return sortField switch
+            {
+                "price" => a.Price.CompareTo(b.Price) * modifier,
+                "supplier" => string.Compare(a.Supplier?.Name ?? "", b.Supplier?.Name ?? "", StringComparison.Ordinal) * modifier,
+                "name" => string.Compare(a.Name, b.Name, StringComparison.Ordinal) * modifier,
+                "sku" => string.Compare(a.Sku, b.Sku, StringComparison.Ordinal) * modifier,
+                "unit" => string.Compare(a.Unit, b.Unit, StringComparison.Ordinal) * modifier,
+                _ => 0
+            };
+        });
+        return sorted;
+    }
+
+    private void HandleSort(string field)
+    {
+        if (field == sortField)
+        {
+            sortOrder = sortOrder == "asc" ? "desc" : "asc";
+        }
+        else
+        {
+            sortField = field;
+            sortOrder = "asc";
+        }
+    }
+
+    private string RenderSortIcon(string field)
+    {
+        if (field != sortField) return "↕";
+        return sortOrder == "asc" ? "↑" : "↓";
+    }
+
+    private void OpenAddForm()
+    {
+        editingProduct = null;
+        showForm = true;
+    }
+
+    private void OpenEditForm(Product product)
+    {
+        editingProduct = product;
+        showForm = true;
+    }
+
+    private void CloseForm()
+    {
+        showForm = false;
+    }
+
+    private async Task OnProductSaved()
+    {
+        showForm = false;
+        await FetchProducts();
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        // Confirm dialog via JS interop would be ideal, but using direct delete for simplicity
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress = new Uri("http://localhost:3001/api/");
+            await client.DeleteAsync($"products/{product.ProductId}");
+            await FetchProducts();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error deleting product: {ex.Message}");
+        }
+    }
+
+    private string GetHeaderClass()
+    {
+        return $"px-6 py-3 text-left text-xs font-medium {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} uppercase tracking-wider cursor-pointer hover:{(ThemeService.DarkMode ? "bg-gray-700" : "bg-gray-300")} transition-colors duration-300";
+    }
+
+    private string GetNonSortableHeaderClass()
+    {
+        return $"px-6 py-3 text-left text-xs font-medium {(ThemeService.DarkMode ? "text-light" : "text-gray-700")} uppercase tracking-wider transition-colors duration-300";
+    }
+
+    private string GetCellClass()
+    {
+        return $"px-6 py-4 whitespace-nowrap {(ThemeService.DarkMode ? "text-light" : "text-gray-800")} transition-colors duration-300";
+    }
+
+    private void OnAuthStateChanged() => InvokeAsync(StateHasChanged);
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        AuthService.OnChange -= OnAuthStateChanged;
+        ThemeService.OnChange -= OnThemeChanged;
+    }
+}
