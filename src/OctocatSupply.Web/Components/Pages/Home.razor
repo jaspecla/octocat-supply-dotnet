@@ -1,116 +1,204 @@
 @page "/"
 @rendermode InteractiveServer
 @inject ThemeService ThemeService
+@inject NavigationManager NavigationManager
 @implements IDisposable
 
 <PageTitle>OctoCAT Supply - Smart Cat Technology</PageTitle>
 
-<div class="@(ThemeService.DarkMode ? "bg-dark text-light" : "bg-white text-gray-800") relative transition-colors duration-300">
-
-    @* Hero Section *@
+<div class="@($"relative {(ThemeService.DarkMode ? "bg-dark text-light" : "bg-white text-gray-800")} transition-colors duration-300")">
     <div class="relative px-4 sm:px-6 lg:px-8 pt-8">
+
+        @* Hero Section *@
         <div class="relative py-4">
             <div class="w-full max-w-7xl mx-auto">
-                <img src="/images/hero.png"
-                     alt="Smart Cat Products powered by AI"
-                     class="w-full h-auto rounded-lg" />
+                <img src="/hero.png" alt="Smart Cat Products powered by AI" class="w-full h-auto rounded-lg" />
             </div>
-
             <div class="absolute inset-0 flex items-start pt-16 justify-end max-w-7xl mx-auto px-10 sm:px-12 lg:px-14 mr-[-1rem]">
-                <div class="@(ThemeService.DarkMode ? "bg-dark/60" : "bg-white/60") max-w-2xl backdrop-blur-sm p-8 rounded-xl shadow-[0_0_25px_rgba(118,184,82,0.5)] transition-colors duration-300">
-                    <div class="@(ThemeService.DarkMode ? "bg-primary/20" : "bg-primary/30") inline-block px-4 py-2 rounded-full mb-4 border border-primary/40">
-                        <span class="text-primary font-semibold">Powered by Advanced AI</span>
+                <div class="@($"max-w-2xl {(ThemeService.DarkMode ? "bg-dark/60" : "bg-white/60")} backdrop-blur-sm p-8 rounded-xl shadow-[0_0_25px_rgba(118,184,82,0.5)] transition-colors duration-300")">
+                    <div class="@($"{(ThemeService.DarkMode ? "bg-primary/20" : "bg-primary/30")} inline-block px-4 py-2 rounded-full mb-4 border border-primary/40")">
+                        <span class="text-primary-700 dark:text-primary-300 font-semibold">Powered by Advanced AI</span>
                     </div>
-                    <h1 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-5xl font-bold mb-6 leading-tight transition-colors duration-300">
-                        Welcome to<br />
-                        <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">OctoCAT Supply</span>
+                    <h1 class="@($"text-5xl font-bold mb-6 leading-tight {(ThemeService.DarkMode ? "text-white" : "text-gray-800")} transition-colors duration-300")">
+                        Smart Cat Tech.<br />Purrsonalized.
                     </h1>
-                    <p class="@(ThemeService.DarkMode ? "text-gray-200" : "text-gray-700") mb-8 text-lg transition-colors duration-300">
-                        Your one-stop shop for premium smart cat technology. Our AI-powered products learn
-                        from your feline friend's behavior to provide personalized experiences, health insights,
-                        and next-level entertainment.
+                    <p class="@($"{(ThemeService.DarkMode ? "text-gray-200" : "text-gray-700")} mb-8 text-lg transition-colors duration-300")">
+                        OctoCAT Supply brings cutting-edge AI technology to enhance your cat's life. Our premium smart products learn from your feline friend's behavior to provide personalized experiences, health insights, and next-level entertainment.
                     </p>
-                    <a href="/products"
-                       class="bg-primary hover:bg-accent text-white px-8 py-3 rounded-md font-medium transition-colors inline-block">
-                        Shop Now
-                    </a>
+                    <button @onclick="NavigateToProducts" class="bg-primary hover:bg-accent text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer">
+                        Explore Products
+                    </button>
                 </div>
             </div>
         </div>
 
-        @* Product Category Cards *@
-        <div class="py-16">
-            <h2 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-3xl font-bold text-center mb-12 transition-colors duration-300">
-                Smart Solutions for Modern Cats
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                @foreach (var category in _categories)
-                {
-                    <div class="@(ThemeService.DarkMode ? "bg-gray-800" : "bg-white") rounded-lg p-6 shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300">
-                        <div class="text-primary text-4xl mb-4">@category.Icon</div>
-                        <h3 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-xl font-bold mb-2 transition-colors duration-300">
-                            @category.Title
-                        </h3>
-                        <p class="@(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600") transition-colors duration-300">
-                            @category.Description
-                        </p>
-                    </div>
-                }
-            </div>
-        </div>
-
-        @* Featured Products Gallery *@
-        <div class="py-16">
-            <h2 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-3xl font-bold text-center mb-12 transition-colors duration-300">
-                Featured Products
-            </h2>
-            <div class="flex gap-6 overflow-x-auto pb-4 max-w-7xl mx-auto snap-x snap-mandatory scrollbar-hide px-2">
-                @foreach (var product in _featuredProducts)
-                {
-                    <div class="@(ThemeService.DarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200") min-w-[280px] max-w-[280px] rounded-lg border shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300 snap-center flex-shrink-0">
-                        <img src="@product.Image"
-                             alt="@product.Name"
-                             class="w-full h-48 object-cover rounded-t-lg" />
-                        <div class="p-4">
-                            <h3 class="@(ThemeService.DarkMode ? "text-white" : "text-gray-800") text-lg font-bold mb-1 transition-colors duration-300">
-                                @product.Name
-                            </h3>
-                            <p class="@(ThemeService.DarkMode ? "text-gray-400" : "text-gray-500") text-sm mb-3 transition-colors duration-300">
-                                @product.Description
-                            </p>
-                            <div class="flex items-center justify-between">
-                                <span class="text-primary font-bold text-lg">@product.Price.ToString("C")</span>
-                                <a href="/products"
-                                   class="bg-primary hover:bg-accent text-white text-sm px-4 py-2 rounded-md transition-colors">
-                                    View
-                                </a>
+        @* Partner Logos Section *@
+        <div class="@($"py-2 mt-0 max-w-7xl mx-auto {(ThemeService.DarkMode ? "text-white" : "text-gray-800")}")">
+            <div class="flex flex-wrap items-center">
+                <div class="w-full md:w-1/5 mb-8 md:mb-0">
+                    <h2 class="text-3xl font-bold text-left transition-colors duration-300">Trusted By Cat Lovers Everywhere</h2>
+                </div>
+                <div class="w-full md:w-4/5 px-4">
+                    @* Hidden SVG filter for green glow *@
+                    <svg class="hidden">
+                        <defs>
+                            <filter id="green-glow">
+                                <feFlood result="flood" flood-color="rgb(118,184,82)" flood-opacity=".3"></feFlood>
+                                <feComposite in="flood" operator="in" in2="SourceGraphic"></feComposite>
+                                <feMerge>
+                                    <feMergeNode></feMergeNode>
+                                    <feMergeNode in="SourceGraphic"></feMergeNode>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                    </svg>
+                    <div class="opacity-50">
+                        <div class="flex flex-wrap justify-around">
+                            @* Whiskers Cafe *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <path d="M30 60 C 30 40, 70 40, 70 60" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <circle cx="35" cy="35" r="7" fill="currentColor"/>
+                                        <circle cx="65" cy="35" r="7" fill="currentColor"/>
+                                        <path d="M40 50 L60 50" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M45 70 C 45 75, 55 75, 55 70" fill="none" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">Whiskers Cafe</span>
+                            </div>
+                            @* PawTech Solutions *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M40 40 L60 40" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M40 60 L60 60" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="30" cy="30" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="70" cy="30" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M25 35 L35 25" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M65 25 L75 35" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">PawTech Solutions</span>
+                            </div>
+                            @* Feline Innovations *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <path d="M25 50 Q 50 20, 75 50" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M25 70 Q 50 40, 75 70" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <circle cx="30" cy="30" r="5" fill="currentColor"/>
+                                        <circle cx="70" cy="30" r="5" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">Feline Innovations</span>
+                            </div>
+                            @* CatHealth AI *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <path d="M30 30 L70 30 L70 70 L30 70 Z" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M50 20 L50 80" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M20 50 L80 50" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="50" cy="50" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M60 40 L65 35" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">CatHealth AI</span>
+                            </div>
+                            @* PurrTech Innovations *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M35 55 L25 80" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M65 55 L75 80" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M43 35 L57 35" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="40" cy="30" r="3" fill="currentColor"/>
+                                        <circle cx="60" cy="30" r="3" fill="currentColor"/>
+                                        <path d="M45 45 C 50 50, 55 50, 60 45" fill="none" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">PurrTech Innovations</span>
+                            </div>
+                            @* WhiskerWare Systems *@
+                            <div class="flex flex-col items-center justify-center text-center px-4">
+                                <div class="flex items-center justify-center mb-2">
+                                    <svg class="w-24 h-24 text-gray-500" style="filter: url(#green-glow)" viewBox="0 0 100 100">
+                                        <path d="M30 70 Q 50 40, 70 70" fill="none" stroke="currentColor" stroke-width="3"/>
+                                        <path d="M20 60 L80 60" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M20 50 L80 50" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M20 40 L80 40" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="35" cy="30" r="5" fill="currentColor"/>
+                                        <circle cx="65" cy="30" r="5" fill="currentColor"/>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-500 text-sm font-medium w-full text-center">WhiskerWare Systems</span>
                             </div>
                         </div>
                     </div>
-                }
+                </div>
             </div>
         </div>
+
+        @* Categories Section *@
+        <div class="py-16">
+            <h2 class="@($"text-3xl font-bold text-center mb-12 {(ThemeService.DarkMode ? "text-white" : "text-gray-800")} transition-colors duration-300")">
+                Smart Solutions for Modern Cats
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                @* Smart Monitoring *@
+                <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg p-6 shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300")">
+                    <div class="text-primary mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 class="@($"{(ThemeService.DarkMode ? "text-white" : "text-gray-800")} text-xl font-bold mb-2 transition-colors duration-300")">
+                        Smart Monitoring
+                    </h3>
+                    <p class="@($"{(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600")} transition-colors duration-300")">
+                        AI-powered devices that track your cat's health, activity, and behavior patterns to provide valuable insights.
+                    </p>
+                </div>
+                @* Interactive Entertainment *@
+                <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg p-6 shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300")">
+                    <div class="text-primary mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="@($"{(ThemeService.DarkMode ? "text-white" : "text-gray-800")} text-xl font-bold mb-2 transition-colors duration-300")">
+                        Interactive Entertainment
+                    </h3>
+                    <p class="@($"{(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600")} transition-colors duration-300")">
+                        Engaging toys and systems that adapt to your cat's play style and preferences for maximum enjoyment.
+                    </p>
+                </div>
+                @* Comfort & Wellness *@
+                <div class="@($"{(ThemeService.DarkMode ? "bg-gray-800" : "bg-white")} rounded-lg p-6 shadow-lg hover:shadow-[0_0_15px_rgba(118,184,82,0.3)] transition-all duration-300")">
+                    <div class="text-primary mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h3 class="@($"{(ThemeService.DarkMode ? "text-white" : "text-gray-800")} text-xl font-bold mb-2 transition-colors duration-300")">
+                        Comfort &amp; Wellness
+                    </h3>
+                    <p class="@($"{(ThemeService.DarkMode ? "text-gray-300" : "text-gray-600")} transition-colors duration-300")">
+                        Smart beds, feeding solutions, and grooming tools designed to enhance your cat's health and comfort.
+                    </p>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
 @code {
-    private record CategoryCard(string Icon, string Title, string Description);
-    private record FeaturedProduct(string Name, string Description, string Image, decimal Price);
-
-    private readonly List<CategoryCard> _categories = new()
-    {
-        new("🍽️", "Smart Feeders", "AI-powered feeding solutions for your feline friends"),
-        new("💊", "Health Tech", "Monitor your cat's wellness with cutting-edge technology"),
-        new("🎮", "Entertainment", "Keep your cat entertained with interactive gadgets")
-    };
-
-    private readonly List<FeaturedProduct> _featuredProducts = new()
-    {
-        new("SmartFeeder Pro", "AI-powered automatic feeder with portion control", "/images/feeder.png", 149.99m),
-        new("ChirpCam 360", "Interactive camera with treat dispenser and laser", "/images/chirp-cam.png", 199.99m),
-        new("Smart Collar+", "GPS tracking with health monitoring sensors", "/images/smart-collar.png", 89.99m),
-        new("CatFlix Station", "Streaming entertainment system for cats", "/images/catflix.png", 129.99m)
-    };
+    private void NavigateToProducts() => NavigationManager.NavigateTo("/products");
 
     protected override void OnInitialized()
     {

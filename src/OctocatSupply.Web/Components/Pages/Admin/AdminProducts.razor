@@ -5,6 +5,7 @@
 @inject ThemeService ThemeService
 @inject NavigationManager NavigationManager
 @inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 @if (!AuthService.IsAdmin)
@@ -253,7 +254,9 @@
 
     private async Task DeleteProduct(Product product)
     {
-        // Confirm dialog via JS interop would be ideal, but using direct delete for simplicity
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete {product.Name}?");
+        if (!confirmed) return;
+
         try
         {
             var client = HttpClientFactory.CreateClient();
