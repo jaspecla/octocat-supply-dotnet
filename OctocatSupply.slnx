@@ -1,4 +1,46 @@
 <Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/agents/">
+    <File Path=".github/agents/agentic-workflows.agent.md" />
+    <File Path=".github/agents/api-coverage-looper.agent.md" />
+    <File Path=".github/agents/api-specialist.agent.md" />
+    <File Path=".github/agents/api-test-writer.agent.md" />
+    <File Path=".github/agents/bdd-specialist.agent.md" />
+    <File Path=".github/agents/tdd-green.agent.md" />
+    <File Path=".github/agents/tdd-planner.agent.md" />
+    <File Path=".github/agents/tdd-red.agent.md" />
+  </Folder>
+  <Folder Name="/.github/instructions/">
+    <File Path=".github/instructions/api.instructions.md" />
+    <File Path=".github/instructions/database.instructions.md" />
+    <File Path=".github/instructions/frontend.instructions.md" />
+  </Folder>
+  <Folder Name="/.github/prompts/">
+    <File Path=".github/prompts/check-dry-violations.prompt.md" />
+    <File Path=".github/prompts/code-injection.prompt.md" />
+    <File Path=".github/prompts/demo-cart-page.prompt.md" />
+    <File Path=".github/prompts/demo-cca-parallel.prompt.md" />
+    <File Path=".github/prompts/demo-unit-test-coverage.prompt.md" />
+    <File Path=".github/prompts/handoff-to-copilot-coding-agent.prompt.md" />
+    <File Path=".github/prompts/handoff.prompt.md" />
+    <File Path=".github/prompts/model-selection.prompt.md" />
+    <File Path=".github/prompts/refine-prompt.prompt.md" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/architecture.md" />
+    <File Path="docs/build.md" />
+    <File Path="docs/deployment.md" />
+    <File Path="docs/model-comparison.md" />
+    <File Path="docs/sqlite-integration.md" />
+    <File Path="docs/tao.md" />
+  </Folder>
+  <Folder Name="/docs/design/">
+    <File Path="docs/design/cart.png" />
+    <File Path="docs/design/footer.png" />
+    <File Path="docs/design/item-list.png" />
+    <File Path="docs/design/main.png" />
+    <File Path="docs/design/order-tracking-prototype.png" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/OctocatSupply.Api/OctocatSupply.Api.csproj" />
     <Project Path="src/OctocatSupply.Web/OctocatSupply.Web.csproj" />
