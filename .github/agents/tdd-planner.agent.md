@@ -35,14 +35,14 @@ Your output is ALWAYS a plan document, nothing more.
 
 MANDATORY: Use #tool:runSubagent to autonomously research:
 - Existing code structure and patterns
-- Related models, repositories, routes
-- Similar test files and testing conventions
-- Error handling patterns
-- Validation requirements
+- Related models, repositories, controllers
+- Similar test files and testing conventions (xUnit patterns)
+- Exception handling patterns
+- Validation requirements using Data Annotations
 
 Instruct the subagent to:
 - Search for similar features and their tests
-- Read relevant source files (models, repositories, routes)
+- Read relevant source files (models, repositories, controllers)
 - Identify testing patterns and conventions
 - Return findings without waiting for user input
 
@@ -82,21 +82,21 @@ Output your plan in this format (save to `docs/tdd-plans/{feature-name}.md`):
 ## Test Specifications
 
 
-### Test File: `{path/to/test.test.ts}`
+### Test File: `tests/OctocatSupply.Api.UnitTests/{Area}/{ClassName}Tests.cs`
 
 
-#### Test Suite: {Suite Name}
+#### Test Class: {ClassName}Tests
 
-**Test 1: {Test description}**
-- **Given:** {Initial conditions}
-- **When:** {Action performed}
-- **Then:** {Expected outcome}
+**Test 1: {MethodName}_Returns{Expected}_When{Condition}**
+- **Given:** {Initial conditions / Arrange}
+- **When:** {Action performed / Act}
+- **Then:** {Expected outcome / Assert}
 - **Files involved:** Link to relevant files
 
-**Test 2: {Test description}**
-- **Given:** {Initial conditions}
-- **When:** {Action performed}
-- **Then:** {Expected outcome}
+**Test 2: {MethodName}_Returns{Expected}_When{Condition}**
+- **Given:** {Initial conditions / Arrange}
+- **When:** {Action performed / Act}
+- **Then:** {Expected outcome / Assert}
 - **Files involved:** Link to relevant files
 
 {Repeat for all test cases}

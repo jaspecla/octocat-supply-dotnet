@@ -45,10 +45,10 @@ MANDATORY: Use #tool:runSubagent to research:
 - Failing test files and their requirements
 - TDD plan document for specifications
 - Similar implementations in codebase
-- Models, DTOs, and types needed
-- Repository patterns and database interaction
-- Route/controller patterns
-- Error handling conventions
+- Models, DTOs, and entity types needed
+- Repository interfaces and EF Core patterns
+- Controller patterns and dependency injection
+- Exception handling conventions
 
 Instruct subagent to work autonomously and return findings.
 
@@ -57,9 +57,9 @@ If #tool:runSubagent unavailable, research with read-only tools first.
 ## 2. Analyze Test Requirements:
 
 Read the test files to understand:
-- What functions/methods are being tested?
+- What classes/methods are being tested?
 - What are the expected inputs and outputs?
-- What errors should be thrown?
+- What exceptions should be thrown?
 - What edge cases must be handled?
 
 Extract the MINIMAL requirements from test expectations.
@@ -67,8 +67,8 @@ Extract the MINIMAL requirements from test expectations.
 ## 3. Implement Minimal Solution:
 
 Following <implementation_guide>:
-- Create required files (models, repositories, routes)
-- Implement functions/methods that tests call
+- Create required files (models, repositories, controllers)
+- Implement classes/methods that tests call
 - Handle all test cases (happy path + edge cases + errors)
 - Use existing patterns and conventions
 - Keep it simple—no extra features
@@ -94,10 +94,11 @@ STOP HERE. Refactoring is a separate step.
 ## Minimal Implementation Strategy
 
 ### Step 1: Create Required Structures
-Based on test imports, create:
-- Models/Types with required properties
-- Repository classes with required methods
-- Route handlers with required endpoints
+Based on test using statements, create:
+- Models/Entities with required properties in `Models/` folder
+- Repository interfaces in `Repositories/` folder (IEntityRepository.cs)
+- Repository classes with required methods in `Repositories/` folder
+- Controller classes with required actions in `Controllers/` folder
 - DTOs for request/response shapes
 
 ### Step 2: Implement Core Logic

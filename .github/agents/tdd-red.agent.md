@@ -29,7 +29,7 @@ You write tests FIRST, implementation comes LATER.
 
 <stopping_rules>
 STOP IMMEDIATELY if you consider:
-- Writing implementation code (models, repositories, routes, etc.)
+- Writing implementation code (models, repositories, controllers, etc.)
 - Making tests pass
 - Creating anything other than test files
 - Modifying existing implementation files
@@ -44,8 +44,8 @@ MANDATORY: Use #tool:runSubagent to research:
 - TDD plan document (if provided as file path)
 - Existing test files for patterns and conventions
 - Testing utilities and helpers
-- Mocking strategies used in codebase
-- Assertion library patterns (expect, toBe, toEqual, etc.)
+- Mocking strategies used in codebase (Moq, NSubstitute)
+- Assertion library patterns (xUnit Assert, FluentAssertions)
 
 Instruct subagent to return findings without user interaction.
 
@@ -57,9 +57,9 @@ Following <test_writing_guide>:
 - Create test file(s) as specified in the plan
 - Write test cases matching the specifications
 - Use existing testing conventions
-- Include proper setup/teardown
-- Add clear test descriptions
-- Import non-existent modules/functions (they'll fail—that's correct!)
+- Include proper setup/teardown with IClassFixture or constructor/Dispose
+- Add clear test descriptions using [Fact] or [Theory] attributes
+- Reference non-existent classes/methods (they'll fail—that's correct!)
 
 ## 3. Verify Red State:
 
@@ -79,25 +79,33 @@ STOP HERE. Do not proceed to implementation.
 ## Test File Structure
 
 
-Follow the codebase conventions (vitest style):
+Follow the codebase conventions (xUnit style):
 
-```typescript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FunctionToTest } from '../src/path/to/module';
-// Import test utilities, mocks, etc.
+```csharp
+using Xunit;
+using Moq;
+using OctocatSupply.Api.Controllers;
+using OctocatSupply.Api.Repositories;
+using OctocatSupply.Api.Models;
+// Add other using statements as needed
 
-describe('Feature Name', () => {
-  // Setup
-  beforeEach(() => {
-    // Arrange test state
-  });
+namespace OctocatSupply.Api.UnitTests.Controllers;
 
-  afterEach(() => {
-    // Cleanup
-  });
+public class FeatureNameControllerTests
+{
+    private readonly Mock<IFeatureRepository> _mockRepository;
+    private readonly FeatureNameController _controller;
 
-  describe('specific behavior group', () => {
-    it('should do expected behavior when condition', () => {
+    public FeatureNameControllerTests()
+    {
+        // Arrange test state
+        _mockRepository = new Mock<IFeatureRepository>();
+        _controller = new FeatureNameController(_mockRepository.Object);
+    }
+
+    [Fact]
+    public async Task MethodName_ReturnsExpected_WhenCondition()
+    {
       // Arrange
       const input = /* test data */;
       
