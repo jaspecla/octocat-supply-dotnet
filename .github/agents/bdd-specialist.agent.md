@@ -173,79 +173,100 @@ Feature: Shopping Cart Management
     And the checkout button should be disabled
 ```
 
-## Playwright Test Structure (OctoCAT Supply Pattern)
+## Playwright .NET Test Structure (OctoCAT Supply Pattern)
 
-```typescript
-import { test, expect } from '@playwright/test';
+```csharp
+using Microsoft.Playwright;
+using Xunit;
 
-/**
- * Product catalog discovery E2E tests
- * Implements: frontend/tests/features/product-navigation.feature
- */
+/// <summary>
+/// Product catalog discovery E2E tests
+/// Implements: tests/Features/product-navigation.feature
+/// </summary>
+public class ProductCatalogTests : IAsyncLifetime
+{
+    private IPlaywright _playwright = null!;
+    private IBrowser _browser = null!;
+    private IPage _page = null!;
 
-test.describe('Product catalog discovery', () => {
-  test.beforeEach(async ({ page }) => {
-    // Navigate away from about:blank so localStorage context is available
-    await page.goto('/');
-  });
+    public async Task InitializeAsync()
+    {
+        _playwright = await Playwright.CreateAsync();
+        _browser = await _playwright.Chromium.LaunchAsync();
+        _page = await _browser.NewPageAsync();
+        // Navigate away from about:blank so localStorage context is available
+        await _page.GotoAsync("/");
+    }
 
-  test('Navigate from the home page to the product catalog', async ({ page }) => {
-    // Given I am on the home page
-    await page.goto('/');
-    await expect(page.locator('h1:has-text("Smart Cat Tech")')).toBeVisible();
+    public async Task DisposeAsync()
+    {
+        await _browser.DisposeAsync();
+        _playwright.Dispose();
+    }
 
-    // When I select the Products navigation link
-    await page.click('nav a:has-text("Products")');
+    [Fact]
+    public async Task NavigateFromHomePageToProductCatalog()
+    {
+        // Given I am on the home page
+        await _page.GotoAsync("/");
+        await Assertions.Expect(_page.Locator("h1:has-text('Smart Cat Tech')")).ToBeVisibleAsync();
 
-    // Then I land on the product catalog page
-    await expect(page).toHaveURL(/\/products/);
+        // When I select the Products navigation link
+        await _page.ClickAsync("nav a:has-text('Products')");
 
-    // And I see the catalog header "Products"
-    await expect(page.locator('h1:has-text("Products")')).toBeVisible();
-  });
+        // Then I land on the product catalog page
+        await Assertions.Expect(_page).ToHaveURLAsync(new Regex("/products"));
 
-  test('Search for a product by name', async ({ page }) => {
-    // Given I am viewing the product catalog
-    await page.goto('/products');
-    await expect(page.locator('h1:has-text("Products")')).toBeVisible();
+        // And I see the catalog header "Products"
+        await Assertions.Expect(_page.Locator("h1:has-text('Products')")).ToBeVisibleAsync();
+    }
 
-    // And the catalog includes "SmartFeeder One"
-    const productGrid = page.locator('div[class*="grid"]').filter({ hasText: 'SmartFeeder One' });
-    await expect(productGrid).toBeVisible();
+    [Fact]
+    public async Task SearchForProductByName()
+    {
+        // Given I am viewing the product catalog
+        await _page.GotoAsync("/products");
+        await Assertions.Expect(_page.Locator("h1:has-text('Products')")).ToBeVisibleAsync();
 
-    // When I search for "SmartFeeder"
-    const searchInput = page.locator('input[aria-label="Search products"]');
-    await searchInput.fill('SmartFeeder');
+        // And the catalog includes "SmartFeeder One"
+        var productGrid = _page.Locator("div[class*='grid']").Filter(new() { HasText = "SmartFeeder One" });
+        await Assertions.Expect(productGrid).ToBeVisibleAsync();
 
-    // Then the results list shows "SmartFeeder One"
-    const productCard = page.locator('h3:has-text("SmartFeeder One")');
-    await expect(productCard).toBeVisible();
+        // When I search for "SmartFeeder"
+        var searchInput = _page.Locator("input[aria-label='Search products']");
+        await searchInput.FillAsync("SmartFeeder");
 
-    // And the product description is visible in the results
-    const description = page.locator('text=/AI-powered feeder.*nap cycles/i').first();
-    await expect(description).toBeVisible();
-  });
+        // Then the results list shows "SmartFeeder One"
+        var productCard = _page.Locator("h3:has-text('SmartFeeder One')");
+        await Assertions.Expect(productCard).ToBeVisibleAsync();
 
-  test('Search for a product with no matches', async ({ page }) => {
-    // Given I am viewing the product catalog
-    await page.goto('/products');
-    await expect(page.locator('h1:has-text("Products")')).toBeVisible();
+        // And the product description is visible in the results
+        var description = _page.Locator("text=/AI-powered feeder.*nap cycles/i").First;
+        await Assertions.Expect(description).ToBeVisibleAsync();
+    }
 
-    // Wait for initial products to load
-    await expect(page.locator('div[class*="grid"]').first()).toBeVisible();
+    [Fact]
+    public async Task SearchForProductWithNoMatches()
+    {
+        // Given I am viewing the product catalog
+        await _page.GotoAsync("/products");
+        await Assertions.Expect(_page.Locator("h1:has-text('Products')")).ToBeVisibleAsync();
 
-    // When I search for "Space Tuna"
-    const searchInput = page.locator('input[aria-label="Search products"]');
-    await searchInput.fill('Space Tuna');
+        // Wait for initial products to load
+        await Assertions.Expect(_page.Locator("div[class*='grid']").First).ToBeVisibleAsync();
 
-    // Then I see the empty state message "No products found"
-    const emptyState = page.locator('[role="status"]');
-    await expect(emptyState).toContainText('No products found');
+        // When I search for "Space Tuna"
+        var searchInput = _page.Locator("input[aria-label='Search products']");
+        await searchInput.FillAsync("Space Tuna");
 
-    // And I am prompted to adjust the search filters
-    await expect(emptyState).toContainText(/clearing.*changing.*search filters/i);
-  });
-});
+        // Then I see the empty state message "No products found"
+        var emptyState = _page.Locator("[role='status']");
+        await Assertions.Expect(emptyState).ToContainTextAsync("No products found");
+
+        // And I am prompted to adjust the search filters
+        await Assertions.Expect(emptyState).ToContainTextAsync(new Regex("clearing.*changing.*search filters", RegexOptions.IgnoreCase));
+    }
+}
 ```
 
 **Key Patterns Used**:

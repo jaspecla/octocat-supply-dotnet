@@ -108,9 +108,9 @@ Output your plan in this format (save to `docs/tdd-plans/{feature-name}.md`):
 
 ## Files to Create/Modify
 
-- [ ] `{test-file.test.ts}` - Test file (to be created by Red agent)
-- [ ] `{implementation-file.ts}` - Implementation (to be created by Green agent)
-- [ ] `{related-file.ts}` - Supporting changes if needed
+- [ ] `{TestClassName}Tests.cs` - Test file (to be created by Red agent)
+- [ ] `{ImplementationClass}.cs` - Implementation (to be created by Green agent)
+- [ ] `{RelatedClass}.cs` - Supporting changes if needed
 
 
 ## Testing Conventions to Follow

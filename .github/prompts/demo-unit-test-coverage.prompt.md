@@ -1,30 +1,30 @@
 ---
-description: 'Demo: Improve API Test Coverage - Add Unit Tests for Missing Routes.'
+description: 'Demo: Improve API Test Coverage - Add Unit Tests for Missing Controllers.'
 tools: ['search', 'edit', 'web','vscode/openSimpleBrowser', 'read', 'execute', 'azure-mcp-server/search', 'playwright/*', 'github/*']
 ---
-# 🧪 Demo: Add Unit Tests for Product and Supplier Routes
+# 🧪 Demo: Add Unit Tests for Product and Supplier Controllers
 
 ## 📊 Current State
 
-- Only **1 test file exists**: `branch.test.ts`
+- Only **1 test file exists**: `BranchesControllerTests.cs`
 
 
 ## 🎯 Objective
-Increase API test coverage by implementing comprehensive unit tests for Product and Supplier routes.
+Increase API test coverage by implementing comprehensive unit tests for Product and Supplier controllers.
 
 ## 📋 Missing Test Files
 
-### 🔗 Route Tests (High Priority)
-The following route files need complete test coverage:
+### 🔗 Controller Tests (High Priority)
+The following controller files need complete test coverage:
 
 
-- [ ] `src/routes/product.test.ts`
-- [ ] `src/routes/supplier.test.ts`
+- [ ] `tests/OctocatSupply.Api.UnitTests/Controllers/ProductsControllerTests.cs`
+- [ ] `tests/OctocatSupply.Api.UnitTests/Controllers/SuppliersControllerTests.cs`
 
 
 ## ✅ Test Coverage Requirements
 
-### For Each Route Test File:
+### For Each Controller Test File:
 
 - **CRUD Operations:**
   - ✅ GET all entities
@@ -43,27 +43,47 @@ The following route files need complete test coverage:
 
 ### Use Existing Pattern
 
-Follow the pattern established in `src/routes/branch.test.ts`:
-```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import request from 'supertest';
-import express from 'express';
+Follow the pattern established in `tests/OctocatSupply.Api.UnitTests/Controllers/BranchesControllerTests.cs`:
+```csharp
+using Xunit;
+using Moq;
+using Microsoft.AspNetCore.Mvc;
+using OctocatSupply.Api.Controllers;
+using OctocatSupply.Api.Repositories;
+using OctocatSupply.Api.Models;
 ```
 
 ### Test Structure Template
-```typescript
-describe('[Entity] API', () => {
-    beforeEach(() => {
-        // Setup app and reset data
-    });
+```csharp
+public class [Entity]ControllerTests
+{
+    private readonly Mock<I[Entity]Repository> _mockRepository;
+    private readonly [Entity]Controller _controller;
 
-    it('should create a new [entity]', async () => { /* POST test */ });
-    it('should get all [entities]', async () => { /* GET all test */ });
-    it('should get a [entity] by ID', async () => { /* GET by ID test */ });
-    it('should update a [entity] by ID', async () => { /* PUT test */ });
-    it('should delete a [entity] by ID', async () => { /* DELETE test */ });
-    it('should return 404 for non-existing [entity]', async () => { /* Error test */ });
-});
+    public [Entity]ControllerTests()
+    {
+        _mockRepository = new Mock<I[Entity]Repository>();
+        _controller = new [Entity]Controller(_mockRepository.Object);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsCreatedResult_WhenValidInput() { /* POST test */ }
+
+    [Fact]
+    public async Task GetAll_ReturnsOkResult_WithAllEntities() { /* GET all test */ }
+
+    [Fact]
+    public async Task GetById_ReturnsOkResult_WhenEntityExists() { /* GET by ID test */ }
+
+    [Fact]
+    public async Task Update_ReturnsOkResult_WhenEntityExists() { /* PUT test */ }
+
+    [Fact]
+    public async Task Delete_ReturnsNoContent_WhenEntityExists() { /* DELETE test */ }
+
+    [Fact]
+    public async Task GetById_ReturnsNotFound_WhenEntityDoesNotExist() { /* Error test */ }
+}
 ```
 
 
@@ -72,23 +92,23 @@ describe('[Entity] API', () => {
 
 ```bash
 # Run all tests
-npm run test:api
+dotnet test
 
 # Run tests with coverage
-npm run test:api -- -- --coverage
+dotnet test --collect:"XPlat Code Coverage"
 
 # Run specific test file
-npm run test:api -- src/routes/product.test.ts
+dotnet test --filter "FullyQualifiedName~ProductsControllerTests"
 ```
 
 
 ## 📈 Success Criteria
-- [ ] Add route test files for Product and Supplier
+- [ ] Add controller test files for Product and Supplier
 - [ ] All tests passing in CI/CD
 
 ## 🚀 Getting Started
 
-1. Start with `product.test.ts` - copy `branch.test.ts` pattern
+1. Start with `ProductsControllerTests.cs` - copy `BranchesControllerTests.cs` pattern
 2. Implement basic CRUD tests first
 3. Add error scenarios incrementally
 4. Run coverage after each file to track progress
@@ -97,8 +117,7 @@ npm run test:api -- src/routes/product.test.ts
 
 ## 📚 Related Files
 
-- ERD Diagram: `api/ERD.png`
-- Existing test: `api/src/routes/branch.test.ts`
-- Test config: `api/vitest.config.ts`
-- Coverage report: `api/coverage/index.html`
+- ERD Diagram: `docs/ERD.png`
+- Existing test: `tests/OctocatSupply.Api.UnitTests/Controllers/BranchesControllerTests.cs`
+- API project: `src/OctocatSupply.Api/OctocatSupply.Api.csproj`
 

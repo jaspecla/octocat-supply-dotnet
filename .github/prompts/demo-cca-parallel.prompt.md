@@ -36,10 +36,9 @@ Implement a complete Cart system including:
 - Refere to the Building Doc (../docs/building.md) for build instructions
 
 ### Implementation Specifications
-1. **Cart Context**: Create a CartContext to manage cart state globally
+1. **Cart Service**: Create a CartService to manage cart state globally via dependency injection
 2. **Cart Icon**: Add to Navigation component with item count badge
-3. **Cart Hook**: Custom hook for cart operations
-4. **Integration**: Connect with existing Product pages
+3. **Integration**: Connect with existing Product pages
 
 ### Key Features to Implement
 - Add items to cart from product pages
@@ -48,7 +47,7 @@ Implement a complete Cart system including:
 - Remove items from cart
 - Calculate subtotals and totals
 - Calculate shipping costs based on total price
-- Persist cart state (localStorage)
+- Persist cart state (browser localStorage via IJSRuntime)
 - Responsive design matching existing app style
 
 ## Success Criteria
@@ -64,9 +63,9 @@ After implementation, users should be able to:
 
 ## Implementation Instructions
 1. Analyze the existing codebase structure
-2. Create cart state management (Context + Hook)
+2. Create cart state management (CartService with DI)
 3. Add cart icon to Navigation component
-4. Create Cart page component
+4. Create Cart page Razor component
 5. Integrate cart functionality with existing Product components
 6. Style components to match existing design system
 7. Test the complete cart workflow

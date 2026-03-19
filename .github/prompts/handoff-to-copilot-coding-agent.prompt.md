@@ -66,14 +66,14 @@ INTERNAL THOUGHTS – not shown to the user.
 
 ## 5. Next Actions (Immediate TODOs)
 <!-- Checklist tasks. Be specific with file paths and methods when possible -->
-- [ ] Update `src/api/controller.ts` to handle new endpoint
+- [ ] Update `src/OctocatSupply.Api/Controllers/Controller.cs` to handle new endpoint
 - [ ] Add unit tests for [specific functionality]
 - [ ] Update documentation in `docs/api.md`
 
 ## 6. Success Criteria
 <!-- How do we know when this task is complete? -->
-- [ ] All unit tests pass (`npm run test:api`)
-- [ ] Code builds without errors (`npm run build`)
+- [ ] All unit tests pass (`dotnet test`)
+- [ ] Code builds without errors (`dotnet build`)
 - [ ] Feature works as described in acceptance criteria
 - [ ] Documentation is updated
 
@@ -86,7 +86,7 @@ INTERNAL THOUGHTS – not shown to the user.
 
 ## 8. Code Context
 <!-- Key code snippets or patterns from the discussion -->
-```typescript
+```csharp
 // Example of the agreed implementation approach
 ```
 ```

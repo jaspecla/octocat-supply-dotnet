@@ -10,35 +10,35 @@ Analyze the codebase for DRY (Don't Repeat Yourself) violations and provide acti
 
 ## 🔎 Areas to Analyze
 
-### 1. **API Route Patterns** 🛣️
-Examine all route files in `api/src/routes/` for:
-- **CRUD Operations**: Identical GET, POST, PUT, DELETE patterns
-- **Swagger Documentation**: Repetitive OpenAPI schema definitions
-- **Error Handling**: Duplicate 404/400/500 error responses
-- **Validation Logic**: Similar input validation patterns
-- **Response Formatting**: Repeated JSON response structures
+### 1. **API Controller Patterns** 🛣️
+Examine all controller files in `src/OctocatSupply.Api/Controllers/` for:
+- **CRUD Operations**: Identical GET, POST, PUT, DELETE action patterns
+- **Swagger Documentation**: Repetitive OpenAPI attribute definitions
+- **Error Handling**: Duplicate 404/400/500 error responses and ProblemDetails
+- **Validation Logic**: Similar input validation patterns using Data Annotations
+- **Response Formatting**: Repeated ActionResult response structures
 
 ### 2. **Component Patterns** ⚛️
-Analyze React components in `frontend/src/components/` for:
+Analyze Blazor components in `src/OctocatSupply.Web/` for:
 - **UI Components**: Similar layout patterns, buttons, forms
-- **Data Fetching**: Duplicate API call patterns
-- **State Management**: Repetitive useState/useEffect patterns
-- **Event Handlers**: Similar onClick, onChange handlers
-- **Styling**: Duplicate CSS classes and Tailwind patterns
+- **Data Fetching**: Duplicate HttpClient/API service call patterns
+- **State Management**: Repetitive parameter and cascading value patterns
+- **Event Handlers**: Similar EventCallback handlers
+- **Styling**: Duplicate CSS classes and styling patterns
 
 ### 3. **Business Logic** 💼
 Check for duplicated business logic in:
-- **Model Definitions**: Similar interfaces and types
-- **Data Transformation**: Repeated mapping/formatting functions
+- **Model Definitions**: Similar classes and record types
+- **Data Transformation**: Repeated mapping/formatting methods
 - **Validation Rules**: Duplicate validation logic
-- **Utility Functions**: Similar helper functions
+- **Utility Methods**: Similar helper methods and extension methods
 
 ### 4. **Configuration & Setup** ⚙️
 Look for configuration duplication in:
-- **Express Router Setup**: Repeated middleware patterns
-- **API Route Registration**: Similar app.use() patterns
-- **Build Configuration**: Duplicate webpack/vite settings
-- **Environment Variables**: Repeated config patterns
+- **Middleware Setup**: Repeated middleware pipeline patterns
+- **Service Registration**: Similar dependency injection patterns in Program.cs
+- **Build Configuration**: Duplicate MSBuild/project settings
+- **Environment Variables**: Repeated configuration patterns in appsettings.json
 
 ## 📊 Analysis Framework
 
@@ -54,23 +54,23 @@ Look for configuration duplication in:
 
 ## 🛠️ Recommended Refactoring Patterns
 
-### **For API Routes:**
+### **For API Controllers:**
 1. **Generic CRUD Controller**: Create base controller class
-2. **Middleware Abstraction**: Extract common middleware patterns
-3. **Response Helpers**: Centralize response formatting
-4. **Validation Decorators**: Reusable validation logic
+2. **Middleware Abstraction**: Extract common middleware/filter patterns
+3. **Response Helpers**: Centralize response formatting with ActionResult helpers
+4. **Validation Attributes**: Reusable Data Annotation and FluentValidation logic
 
-### **For React Components:**
-1. **Higher-Order Components**: Wrap common functionality
-2. **Custom Hooks**: Extract reusable stateful logic
-3. **Component Composition**: Break down into smaller reusable pieces
-4. **Props Interfaces**: Standardize component APIs
+### **For Blazor Components:**
+1. **Base Components**: Inherit common functionality from shared base classes
+2. **Services**: Extract reusable stateful logic into injectable services
+3. **Component Composition**: Break down into smaller reusable Razor components
+4. **Parameter Interfaces**: Standardize component parameter contracts
 
 ### **For Business Logic:**
-1. **Service Layer**: Centralize business operations
+1. **Service Layer**: Centralize business operations with dependency injection
 2. **Factory Patterns**: Create object instances consistently
 3. **Strategy Pattern**: Handle similar operations differently
-4. **Utility Modules**: Group related helper functions
+4. **Extension Methods**: Group related helper methods as extensions
 
 ## 📝 Deliverables
 
