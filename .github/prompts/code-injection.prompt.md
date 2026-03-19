@@ -17,42 +17,51 @@ git checkout -b <branch_name>
 ### Create a Vulnerable Block
 
 
-Update `api/src/routes/delivery.ts`, replacing the existing `router.put('/:id/status')` method. The vulnerable code uses `exec()` from `child_process` to run a user-supplied `notifyCommand` without any sanitization:
+Update `src/OctocatSupply.Api/Controllers/DeliveriesController.cs`, replacing the existing `PUT /:id/status` action method. The vulnerable code uses `Process.Start()` from `System.Diagnostics` to run a user-supplied `notifyCommand` without any sanitization:
 
-```typescript
-// Update api/src/routes/delivery.ts, replacing the existing router.put('/:id/status') method
+```csharp
+// Update src/OctocatSupply.Api/Controllers/DeliveriesController.cs,
+// replacing the existing PUT UpdateStatus action method
 
-router.put('/:id/status', async (req, res, next) => {
-  try {
-    const { status, notifyCommand } = req.body;
-    const repo = await getDeliveriesRepository();
-    const delivery = await repo.findById(parseInt(req.params.id));
+[HttpPut("{id}/status")]
+public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusRequest request)
+{
+    var delivery = await _repository.GetByIdAsync(id);
 
-    if (delivery) {
-      const updatedDelivery = await repo.updateStatus(parseInt(req.params.id), status);
-
-      if (notifyCommand) {
-        exec(notifyCommand, (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Error executing command: ${error}`);
-            return res.status(500).json({ error: error.message });
-          }
-          res.json({ delivery: updatedDelivery, commandOutput: stdout });
-        });
-      } else {
-        res.json(updatedDelivery);
-      }
-    } else {
-      res.status(404).send('Delivery not found');
+    if (delivery == null)
+    {
+        return NotFound("Delivery not found");
     }
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      res.status(404).send('Delivery not found');
-    } else {
-      next(error);
+
+    var updatedDelivery = await _repository.UpdateStatusAsync(id, request.Status);
+
+    if (!string.IsNullOrEmpty(request.NotifyCommand))
+    {
+        try
+        {
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = "cmd.exe";
+            process.StartInfo.Arguments = $"/c {request.NotifyCommand}";
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.UseShellExecute = false;
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            return Ok(new { delivery = updatedDelivery, commandOutput = output });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
-  }
-});
+
+    return Ok(updatedDelivery);
+}
+
+public class UpdateStatusRequest
+{
+    public string Status { get; set; } = string.Empty;
+    public string? NotifyCommand { get; set; }
+}
 ```
 
 

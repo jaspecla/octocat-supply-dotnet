@@ -84,10 +84,10 @@ Follow the codebase conventions (xUnit style):
 ```csharp
 using Xunit;
 using Moq;
+using Microsoft.AspNetCore.Mvc;
 using OctocatSupply.Api.Controllers;
 using OctocatSupply.Api.Repositories;
 using OctocatSupply.Api.Models;
-// Add other using statements as needed
 
 namespace OctocatSupply.Api.UnitTests.Controllers;
 
@@ -98,42 +98,59 @@ public class FeatureNameControllerTests
 
     public FeatureNameControllerTests()
     {
-        // Arrange test state
         _mockRepository = new Mock<IFeatureRepository>();
         _controller = new FeatureNameController(_mockRepository.Object);
     }
 
     [Fact]
-    public async Task MethodName_ReturnsExpected_WhenCondition()
+    public async Task GetById_ReturnsOkResult_WhenEntityExists()
     {
-      // Arrange
-      const input = /* test data */;
-      
-      // Act
-      const result = FunctionToTest(input);
-      
-      // Assert
-      expect(result).toBe(expectedValue);
-    });
+        // Arrange
+        var expected = new Feature { Id = 1, Name = "Test" };
+        _mockRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(expected);
 
-    it('should handle edge case correctly', () => {
-      // Arrange, Act, Assert
-    });
+        // Act
+        var result = await _controller.GetById(1);
 
-    it('should throw error when invalid input', () => {
-      // Test error conditions
-      expect(() => FunctionToTest(invalidInput)).toThrow(ExpectedError);
-    });
-  });
-});
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(expected, okResult.Value);
+    }
+
+    [Fact]
+    public async Task GetById_ReturnsNotFound_WhenEntityDoesNotExist()
+    {
+        // Arrange
+        _mockRepository.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((Feature?)null);
+
+        // Act
+        var result = await _controller.GetById(999);
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenInvalidInput()
+    {
+        // Arrange - invalid model state
+        _controller.ModelState.AddModelError("Name", "Required");
+
+        // Act
+        var result = await _controller.Create(new Feature());
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+}
 ```
 
 
 ## Test Naming Conventions
 
-- Use descriptive `it('should...')` statements
-- Group related tests in `describe()` blocks
-
+- Use descriptive `MethodName_ReturnsExpected_WhenCondition` naming pattern
+- Group related tests in the same test class
+- Use `[Fact]` for single-case tests and `[Theory]` with `[InlineData]` for parameterized tests
 - Include edge cases and error conditions
 - Test one behavior per test case
 
@@ -161,11 +178,9 @@ Research priorities when gathering context:
    - What test utilities exist?
    - Mocking patterns for repositories/database
 3. **Test Configuration**:
-
-   - vitest.config.ts settings
-
-   - Test file naming conventions
-   - Import paths and aliases
+   - Test project `.csproj` settings and package references
+   - Test file naming conventions (`*Tests.cs`)
+   - Namespace and using conventions
 4. **Error Patterns**:
    - Custom error types
    - Expected error messages

@@ -102,22 +102,18 @@ When you describe what API feature you need, I will:
 - **Documentation**: Swagger/OpenAPI documentation synced with actual code
 - **Performance**: Watch for N+1 queries, proper indexes
 
-- **Types**: Strict TypeScript, no `any`, separate DTOs from models
+- **Types**: Strict C# typing, no `dynamic` or `object`, separate DTOs from entity models
 
 
 ## Reference Architecture
 
 ```
-api/src/
-├── models/          # TypeScript types matching schema
-├── repositories/    # Data access layer
-├── routes/          # Express.js route handlers
-├── utils/
-│   └── errors.ts    # Domain error classes
-├── db/              # Database utilities
-└── sql/
-    ├── migrations/  # Schema evolution
-    └── seed/        # Reference data
+src/OctocatSupply.Api/
+├── Models/          # C# entity classes matching schema
+├── Repositories/    # Data access layer with interfaces
+├── Controllers/     # ASP.NET Core controller actions
+├── Data/            # EF Core DbContext and seed data
+└── Program.cs       # Application startup and DI configuration
 ```
 
 ## Example Scenarios

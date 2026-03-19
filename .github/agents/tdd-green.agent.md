@@ -110,54 +110,55 @@ For each test case:
 ### Step 3: Handle Edge Cases
 From the tests:
 - Add validation for required fields
-- Handle null/undefined cases
-- Throw appropriate errors
+- Handle null cases
+- Throw appropriate exceptions
 - Return correct HTTP status codes
 
 ### Step 4: Follow Existing Patterns
 
 **Repository Pattern:**
 
+```csharp
+public class ThingRepository : IThingRepository
+{
+    private readonly AppDbContext _context;
 
-```typescript
-export class ThingRepository {
-  async getById(id: number): Promise<Thing | null> {
-    // Use existing database patterns
-    const row = await db.get('SELECT ...');
-    return row ? mapRowToThing(row) : null;
-  }
+    public ThingRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Thing?> GetByIdAsync(int id)
+    {
+        return await _context.Things.FindAsync(id);
+    }
 }
 ```
 
+**Controller Pattern:**
 
-**Route Pattern:**
-
-
-```typescript
-router.get('/:id', async (req, res, next) => {
-  try {
-    const thing = await repository.getById(Number(req.params.id));
-    if (!thing) throw new NotFoundError('Thing not found');
-    res.json(thing);
-  } catch (error) {
-    next(error);
-  }
-});
+```csharp
+[HttpGet("{id}")]
+public async Task<IActionResult> GetById(int id)
+{
+    var thing = await _repository.GetByIdAsync(id);
+    if (thing == null) return NotFound();
+    return Ok(thing);
+}
 ```
 
-
 **Error Handling:**
-- Use existing custom errors (`NotFoundError`, `ValidationError`, etc.)
-- Let error middleware handle responses
-- Throw errors, don't return them
+- Use existing exception types and ProblemDetails responses
+- Let exception handling middleware handle responses
+- Throw exceptions, don't return error objects
 
 ## What Makes Tests Pass
 
 Look for these patterns in tests:
-- `expect(result).toBe(value)` → return that value
-- `expect(result).toHaveProperty('field')` → include that property
-- `expect(() => fn()).toThrow(Error)` → throw that error
-- `expect(mockFn).toHaveBeenCalledWith(args)` → call with those args
+- `Assert.Equal(expected, result)` → return that value
+- `Assert.IsType<OkObjectResult>(result)` → return that result type
+- `await Assert.ThrowsAsync<Exception>(...)` → throw that exception
+- `mockRepo.Verify(m => m.Method(args))` → call with those args
 
 Implement exactly what tests verify, nothing extra.
 </implementation_guide>
@@ -173,8 +174,8 @@ Research priorities:
 
 2. **Existing Patterns**:
    - Similar models (structure, validation)
-   - Similar repositories (CRUD operations, SQL queries)
-   - Similar routes (error handling, response format)
+   - Similar repositories (CRUD operations, EF Core queries)
+   - Similar controllers (error handling, response format)
    - DTOs and type mappings
 
 3. **Database Schema**:
@@ -188,11 +189,9 @@ Research priorities:
    - What HTTP status codes map to each error?
 
 5. **Type Safety**:
-
-   - TypeScript interfaces needed
-   - Type imports from models
+   - C# interfaces and abstract classes needed
+   - Model and DTO references
    - Generic types for repositories
-
 
 Gather enough context to write implementation that matches codebase idioms.
 </context_engineering>
@@ -201,7 +200,7 @@ Gather enough context to write implementation that matches codebase idioms.
 After implementation, verify:
 
 1. **Run Tests**: Use #tool:runTests to confirm all pass
-2. **Check Errors**: No TypeScript compilation errors
+2. **Check Errors**: No C# compilation errors
 3. **Review Coverage**: All test cases handled?
 4. **Pattern Consistency**: Matches existing code style?
 

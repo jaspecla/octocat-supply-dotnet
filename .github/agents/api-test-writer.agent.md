@@ -101,9 +101,9 @@ Check test results:
 - If tests fail → analyze error, fix test or identify implementation bug
 - If tests pass → check coverage
 
-Check coverage from `api/coverage/coverage-summary.json`:
-- Find entry for `api/src/routes/{routeName}.ts`
-- Check `lines.pct` and `branches.pct`
+Check coverage from the test results output:
+- Find entry for the controller under test
+- Check line and branch coverage percentages
 - Target: both ≥ 80%
 
 ## 6. Iterate if Needed
@@ -123,12 +123,12 @@ Common gaps:
 When tests pass and coverage ≥ 80% report as follows:
 
 ```
-## ✅ Tests Complete for {routeName}.ts
+## ✅ Tests Complete for {ControllerName}Controller.cs
 
 **Test Results:** All {N} tests passing
 **Coverage:** {X}% lines, {Y}% branches
 
-Test file created: `api/src/routes/{routeName}.test.ts`
+Test file created: `tests/OctocatSupply.Api.UnitTests/Controllers/{ControllerName}ControllerTests.cs`
 ```
 </workflow>
 
@@ -141,13 +141,13 @@ Check the migration files in `api/database/migrations/` for exact schema.
 </foreign_key_reference>
 
 <coverage_commands>
-Run coverage for specific file (non-interactive):
+Run coverage for specific controller (non-interactive):
 ```bash
-cd api && npm run test:coverage -- --reporter=json-summary api/src/routes/{file}.test.ts
+dotnet test tests/OctocatSupply.Api.UnitTests --filter "FullyQualifiedName~{ControllerName}ControllerTests" --collect:"XPlat Code Coverage"
 ```
 
 View coverage summary:
 ```bash
-cat api/coverage/coverage-summary.json | jq '.["api/src/routes/{file}.ts"]'
+# Coverage reports are generated in the TestResults directory
 ```
 </coverage_commands>

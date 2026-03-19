@@ -6,7 +6,7 @@ tools: ['search', 'edit', 'web','vscode/openSimpleBrowser', 'read', 'execute', '
 # Demo: Cart Page and Icon Implementation
 
 ## Context
-This is a demo for GitHub Copilot Agent Mode and Vision capabilities. You are working with the OctoCAT Supply Chain Management System - a modern TypeScript web application with separate API and Frontend (React) projects.
+This is a demo for GitHub Copilot Agent Mode and Vision capabilities. You are working with the OctoCAT Supply Chain Management System - a modern .NET web application with a separate ASP.NET Core Web API and a Blazor frontend project.
 
 ## Current State
 - The application has a Products page where users can view items
@@ -39,11 +39,10 @@ Use the provided cart design image (../docs/design/cart.png) as the visual refer
 - Refere to the Building Doc (../docs/building.md) for build instructions
 
 ### Implementation Specifications
-1. **Cart Context**: Create a CartContext to manage cart state globally
+1. **Cart Service**: Create a CartService to manage cart state globally via dependency injection
 2. **Cart Icon**: Add to Navigation component with item count badge
 3. **Cart Page**: Full-featured cart page matching the design
-4. **Cart Hook**: Custom hook for cart operations
-5. **Integration**: Connect with existing Product pages
+4. **Integration**: Connect with existing Product pages
 
 ### Key Features to Implement
 - Add items to cart from product pages
@@ -52,7 +51,7 @@ Use the provided cart design image (../docs/design/cart.png) as the visual refer
 - Remove items from cart
 - Calculate subtotals and totals
 - Calculate shipping costs based on total price
-- Persist cart state (localStorage)
+- Persist cart state (browser localStorage via IJSRuntime)
 - Responsive design matching existing app style
 
 ## Success Criteria
@@ -68,9 +67,9 @@ After implementation, users should be able to:
 
 ## Implementation Instructions
 1. Analyze the existing codebase structure
-2. Create cart state management (Context + Hook)
+2. Create cart state management (CartService with DI)
 3. Add cart icon to Navigation component
-4. Create Cart page component
+4. Create Cart page Razor component
 5. Integrate cart functionality with existing Product components
 6. Style components to match existing design system
 7. Test the complete cart workflow
