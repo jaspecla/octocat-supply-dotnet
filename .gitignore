@@ -34,7 +34,7 @@ artifacts/
 *.db
 *.db-shm
 *.db-wal
-data/
+/data/
 
 # Visual Studio
 .vs/

@@ -45,4 +45,7 @@
     <Project Path="src/OctocatSupply.Api/OctocatSupply.Api.csproj" />
     <Project Path="src/OctocatSupply.Web/OctocatSupply.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OctocatSupply.Api.UnitTests/OctocatSupply.Api.UnitTests.csproj" />
+  </Folder>
 </Solution>
