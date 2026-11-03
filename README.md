@@ -41,6 +41,49 @@ The frontend will start at `http://localhost:5000` (or the port shown in console
 dotnet build
 ```
 
+### Running in containers
+
+Install Docker with Linux container support. Run these commands from the repository root
+(the build context for both Dockerfiles):
+
+```powershell
+docker build --file src\OctocatSupply.Api\Dockerfile --tag octocat-supply-api .
+docker build --file src\OctocatSupply.Web\Dockerfile --tag octocat-supply-web .
+
+docker network create octocat-supply
+docker volume create octocat-supply-data
+
+docker run --detach --name octocat-api --network octocat-supply --publish 127.0.0.1:3001:8080 --mount source=octocat-supply-data,target=/app/data octocat-supply-api
+docker run --detach --name octocat-web --network octocat-supply --publish 127.0.0.1:5000:8080 --env ApiBaseUrl=http://octocat-api:8080/api/ octocat-supply-web
+```
+
+Open the frontend at `http://localhost:5000`. The API is available at
+`http://localhost:3001/api/products`. API calls originate from the Blazor server,
+so `ApiBaseUrl` uses the API container's network name, not `localhost`.
+
+Both images use multi-stage .NET 10 builds, run as a non-root user, and listen on
+HTTP port `8080`. Configure them using environment variables:
+
+- **API**: `DbFile` defaults to `/app/data/app.db`. The named volume preserves SQLite
+  data across container replacement; a new database is created and seeded at startup.
+  Bind-mounted directories must be writable by the image's `app` user.
+- **Frontend**: Set `ApiBaseUrl` to the backend URL, including the trailing `/api/`.
+- **Both**: `ASPNETCORE_ENVIRONMENT` defaults to `Production`. Swagger is disabled
+  unless the API runs with `ASPNETCORE_ENVIRONMENT=Development`.
+
+For hosted deployments, terminate HTTPS at your ingress/reverse proxy and enable
+WebSockets for Blazor Server. Frontend data-protection keys should be persisted
+outside the container to retain protected browser state across replacements.
+The `Production` environment setting does **not** make this intentionally vulnerable
+demo safe for production; keep it isolated and do not expose it publicly.
+
+Stop and remove the demo containers and network (the data volume is retained):
+
+```powershell
+docker rm --force octocat-web octocat-api
+docker network rm octocat-supply
+```
+
 ## Project Structure
 
 ```
