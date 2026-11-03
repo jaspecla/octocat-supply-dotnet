@@ -84,6 +84,23 @@ docker rm --force octocat-web octocat-api
 docker network rm octocat-supply
 ```
 
+### Deploying to Azure Container Apps
+
+The [Azure deployment guide](docs/deployment.md) provisions Azure Container
+Registry, builds both images in ACR, and runs them in one Container App using
+managed-identity image pulls:
+
+```powershell
+az login
+az account set --subscription '<subscription-id>'
+.\infra\deploy.ps1 -ResourceGroup 'rg-octocat-demo' -Location 'eastus2'
+```
+
+Requires PowerShell 7+, Azure CLI with Bicep, and permissions to create resources
+and role assignments. This configuration exposes the intentionally vulnerable
+demo over public HTTPS and uses **disposable SQLite data**. Do not use real data
+or treat it as production-ready. See the guide for prerequisites, costs, and cleanup.
+
 ## Project Structure
 
 ```

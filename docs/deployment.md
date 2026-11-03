@@ -1,173 +1,144 @@
-# Azure Container Apps Deployment Plan for OctoCAT Supply Chain Management
+# Deploy to Azure Container Apps
 
-This document outlines the deployment plan for the OctoCAT Supply Chain Management application to Azure Container Apps, focusing on cost-effectiveness and maintainability.
+> **Warning:** This application contains intentional security vulnerabilities.
+> This deployment exposes the Blazor demo over public HTTPS, without adding
+> authentication. Use only disposable demo data and remove the resources when
+> finished. This is not a production deployment.
 
-## 1. Bicep Infrastructure Plan
+## Architecture
 
-### File Structure
-```
-infra/
-├── main.bicep                 # Main orchestration file
-├── modules/
-│   ├── webapps.bicep          # Web Apps (Sites) connected to ACR for running containers
-│   ├── logAnalytics.bicep     # Log Analytics workspace
-├── parameters/
-│   ├── staging.parameters.json # Staging environment parameters
-│   └── production.parameters.json # Production environment parameters
-```
+[main.bicep](../infra/main.bicep) creates:
 
-#### Parameters must include:
-- environmentName
-- appName
-- acrName
-- imageTag
+- A Basic Azure Container Registry (ACR), with admin credentials and anonymous
+  pulls disabled.
+- A user-assigned managed identity with `AcrPull` scoped only to that registry.
+- A Log Analytics workspace with 30-day retention.
+- An Azure Container Apps environment using the Consumption workload profile.
+- One Container App with the existing API and Blazor Docker images.
 
-The ACR resource ID must be correctly calculated in the `main.bicep` file and passed to the `webapps.bicep` file along with the `acrName`, `imageTag` and other necessary variables. Make sure the location is defaulted to the resource group location for all resources.
+Only the web container's port `8080` is exposed through HTTPS ingress. Automatic
+HTTP transport supports Blazor Server WebSockets. The API listens on port `8081`
+and the Blazor server calls `http://localhost:8081/api/`; it has no public ingress.
+Both containers retain the Dockerfiles' non-root user and Production environment.
+Startup and readiness probes cover both containers.
 
-#### Outputs
+The app stays at one replica with single-revision mode. SQLite lives at
+`/app/data/app.db` in the API container's **ephemeral filesystem**. It is recreated
+and seeded when that container is replaced or restarted. Deployments lose changes;
+old and new revisions may briefly have separate databases during rollout.
+Blazor circuits and data-protection keys are also disposable, so reconnect or sign
+in again after a replacement. No persistent database or storage is provisioned.
 
-Make sure you output the URL of both the API and Frotend in the `main.bicep` file so that it can be used as an output parameter for the environments in the Actions workflows.
+## Prerequisites
 
-#### Managed Identity
+- PowerShell 7 or later.
+- Azure CLI with Bicep installed (`az bicep install` if missing).
+- An Azure subscription and a region supporting Azure Container Apps Consumption.
+- Permission to create the resource group and resources, run ACR builds, and
+  create the scoped role assignment. For example, Contributor plus Role Based
+  Access Control Administrator at the target scope. Contributor alone cannot
+  create role assignments. Use narrower custom permissions where appropriate.
+- The `Microsoft.App`, `Microsoft.ContainerRegistry`,
+  `Microsoft.OperationalInsights`, and `Microsoft.ManagedIdentity` resource
+  providers must be registered in the subscription. If needed, a subscription
+  administrator can run `az provider register --namespace <provider> --wait`.
 
-Configure the Web Apps to use Managed Identity (SystemAssigned) to authenticate to the ACR via an `AcrPull` role assignment to the principalID. Set `acrUseManagedIdentityCreds: true` for the web apps.
+No local Docker installation is required: `az acr build` uploads the repository
+build context and builds the Linux images in Azure. The existing
+[.dockerignore](../.dockerignore) excludes local databases, build outputs, and
+common secret files. Review the build context before uploading it.
+ACR Tasks must be available to your subscription; some restricted subscriptions
+cannot run cloud builds.
 
-### Key Resources to Include
+## Deploy
 
-1. **Logging**
-   - Log Analytics integration for monitoring
+From the repository root:
 
-2. **Container Registry**
-   - Use AZCR.io for container registry (the configuration script will create one)
-   - builds that push images must push to this Container Registry
+```powershell
+az login
+az account set --subscription '<subscription-id>'
 
-3. **Two Azure Web Apps (Sites)**
-   - both running on B1 SKU
-   - API web app running API container
-   - Frontend web app running Frontend container
-      - Configured to point to ACR
-     - use respective API or Frontend image and tag
-     - ensure frontend URL is allowed in CORS for API
-   - Use `uniqueString()` to add a unique post-fix to the web app names
-   - ensure that API_HOST and API_PORT are correctly configured for the frontend deployment
-      - SQLite persistence for API: mount a writable volume for the DB file and set `DB_FILE` accordingly (e.g., `/home/site/data/app.db`)
-
-4. **No role assignments**
-   - do not include ACR Pull role assignments - the Service Principal is already configured for this.
-
-5. **Avoid circular assignments**
-   - be careful: the API needs frontend info and vice-versa, so ensure that you account for this and don't end up with circular logic!
-
-## 2. Important Configuration Points & Gotchas
-
-### CORS Configuration
-- Configure CORS in the API container app to allow requests from the Frontend container app
-- Use environment variables for dynamic CORS origins based on environment (make sure it starts with `https://`!)
-```
-API_CORS_ORIGINS=https://${frontendAppFqdn},https://${stagingFrontendAppFqdn}
-```
-- Ensure that the Web App for the frontend has these env vars:
-```
-API_HOST=<host_of_API_web_app>
-API_PORT=80
-```
-- Make sure that the `API_HOST` does NOT contain `https://` (it is the host, not the URL).
-
-### SQLite Persistence (API)
-- The API uses SQLite. Configure persistence in hosted environments:
-   - Set `DB_FILE` to a path under the Web App persistent storage (e.g., `/home/site/data/app.db` on Linux)
-   - Ensure the containing directory exists or is created on startup
-   - Optionally enable WAL with `DB_ENABLE_WAL=true` for better concurrency
-   - Foreign key enforcement is enabled by default; override with `DB_FOREIGN_KEYS=false` if needed
-- For containers (compose/k8s), mount a host or managed volume to persist the DB file
-
-Example env vars for API:
-```
-DB_FILE=/home/site/data/app.db
-DB_ENABLE_WAL=true
-DB_FOREIGN_KEYS=true
-DB_TIMEOUT=30000
+.\infra\deploy.ps1 -ResourceGroup 'rg-octocat-demo' -Location 'eastus2'
 ```
 
-## 3. GitHub Actions Workflow Plan
+The [deployment script](../infra/deploy.ps1):
 
-### Workflow Structure
+1. Compiles Bicep locally before creating resources.
+2. Creates the resource group if absent, or preserves its existing region.
+   `-Location` selects the region for application resources; it does not move
+   an existing resource group.
+3. Deploys the registry, managed identity, role assignment, logs, and environment
+   with `deployApplication=false`.
+4. Builds and pushes `octocat-supply/api:<tag>` and `octocat-supply/web:<tag>` to
+   the new ACR using the repository root as the Docker build context.
+5. Redeploys Bicep with `deployApplication=true`, after the images exist.
+6. Checks the public HTTPS endpoint and returns the frontend URL, app name,
+   registry name, image tag, and Azure portal resource-group URL.
+
+By default, the image tag contains a UTC timestamp and random suffix. Redeploy
+using the same resource group and app name to update the existing application:
+
+```powershell
+.\infra\deploy.ps1 -ResourceGroup 'rg-octocat-demo' -Location 'eastus2' `
+    -AppName 'octocat-supply' -ImageTag 'demo-v2'
 ```
-.github/workflows/
-├── build-test.yml   # CI workflow for PRs
-├── deploy.yml       # CD workflow for deploying to staging on PR and approval for PROD
+
+Always use a **new tag** for changed images, rather than overwriting an existing
+tag. Keep the region unchanged when reusing existing application resources.
+Names include a deterministic suffix based on resource group and app name.
+Changing either creates different resources rather than renaming the existing
+ones. To deploy in a different region, use a new app name, because Azure
+resources cannot be moved between regions.
+
+Infrastructure is defined in Bicep; the PowerShell script only orchestrates
+provisioning, cloud image builds, and verification. It stops on failed Azure CLI
+commands or failed HTTPS verification. Running the script provisions billable
+resources; merely compiling the templates does not.
+
+## Validate without deploying
+
+```powershell
+az bicep build --file .\infra\main.bicep --stdout
+az bicep lint --file .\infra\main.bicep
 ```
 
-### CI Workflow (build-test.yml)
-- Triggered on push to any branch
-- Build both API and Frontend
-- Run unit tests
-- Lint code
-- Build Docker images but don't push them
+With an existing resource group and suitable permissions, preview changes after
+building the images using that registry and tag:
 
-### Deployment (deploy.yml)
-- Build
-  - Triggered on PR
-  - Build and run tests
-  - 2 jobs that run in parallel: one for API and one for Frontend
-     - Build and push Docker image to GHCR - use the short SHA of the commit to version the image
-- Staging Job
-  - requires both build jobs
-  - Deploy Bicep templates with staging parameters to Staging environment
-- Prod Job
-  - requires Staging job
-  - wait for approval (configured on Environment)
-  - Deploy Bicep templates with staging parameters to Prod environment
+```powershell
+az deployment group what-if --resource-group 'rg-octocat-demo' `
+    --template-file .\infra\main.bicep `
+    --parameters appName=octocat-supply imageTag=demo-v2 deployApplication=true
+```
 
-## 4. Deployment Process
+## Troubleshooting
 
-1. **Setup Prereqs**
-   - `az cli` (use `brew install az`) and then run `az login` to log in to your Azure subscription
-   - `gh cli` (use `brew install gh`) and then run `gh login` to log in to your GitHub account
+- **AuthorizationFailed on role assignment:** the deploying principal needs
+  role-assignment write permissions, not just Contributor.
+- **Image pull failure:** check that both images and the chosen tag exist in
+  ACR. Managed identity role propagation can take time; retry deployment after
+  propagation. Do not enable ACR admin credentials as a workaround.
+- **Build failure:** inspect the ACR build output. Both Dockerfiles require the
+  repository root as context, not their individual project directories.
+- **Frontend check failure:** inspect both containers' logs and revision
+  readiness in the Azure portal. The API must listen on `8081`, while web ingress
+  targets `8080`. Open the frontend and verify interactive product loading and
+  the Blazor connection; an HTTP check alone does not test browser interactivity.
 
-2. **CI/CD Pipeline Configuration**
-   - Use OIDC for authentication from workflows:
-      - Run [this script](../infra/create-sp-oidc.sh) to create a service principal and configure OIDC for the repo.
-      - The script sets up:
-         - a Service Principal configured with OIDC
-         - Resource Groups for staging and prod
-         - An Azure Container Registry for hosting the images
-         - Actions Variables needed for workflows
-            - AZURE_CLIENT_ID: ID of the SP
-            - AZURE_TENANT_ID: ID of the tenant
-            - AZURE_SUBSCRIPTION_ID: ID of the subscription
-            - AZURE_RESOURCE_GROUP: Stating Resource Group
-            - AZURE_RESOURCE_GROUP_PROD: Prod Resource Group
-            - AZURE_ACR_NAME: Name of the AZCR
-         - 2 environments in the repo: Staging and Prod, with a manual approval on Prod
-         - use the step output of the deply step to update the frontend URL as the URL of the enviroment
+## Cleanup and costs
 
-3. **Deployment Strategy**
-   - for any push, execute the CI build
-   - for PRs and pushes to `main`:
-     - build and test the code
-     - create the docker images using the short SHA for the version tag
-     - use AZ login to get the credentials for the AZCR from the AZURE_ACR_NAME and AZURE_RESOURCE_GROUP_PROD vars
-     - push the images to the AZCR
-     - deploy to Staging first using the Staging environment
-     - wait for approval for Prod (configured on Prod environment)
-     - deploy to Prod using the Prod environment
-   - ensure that you use the following format for the environments so that the URL is populated in the workflow view:
-      ```yml
-      environment:
-        name: Staging|Production
-        url: ${{ steps.deploy.outputs.frontendUrl }}
-      ```
+The app deliberately keeps one replica running to avoid idle scale-to-zero
+resets. ACR, container compute, builds, and log ingestion may incur charges.
+There is no production hardening, backup, or recovery mechanism.
 
-### Backups and Recovery
-- Since SQLite is file-based, implement periodic backups of the DB file location
-- On Azure Web Apps, use WebJobs or scheduled workflows to copy `/home/site/data/app.db` to blob storage
-- For Docker, copy the volume or bind-mount target to backup storage
+Delete the resource group **only if it is dedicated to this demo**:
 
-## 3. IMPORTANT! Final Checks
-- Ensure that the bicep files don't have any unused declarations/varialbes
-- Ensure that the `main.bicep` file outputs the hostnames of the API and the frontend, and that these are used (via `${{ steps.<deploy>.ouputs}}) to set the URL for the environment (ensuring that `https://` is prepended)
-- Ensure that AcrPull role assignment is performed correctly for the Web Apps, and that both apps have `acrUseManagedIdentityCreds` is set to true
-- Ensure that the resources are using the location of the resource group
+```powershell
+az group delete --name 'rg-octocat-demo' --yes --no-wait
+```
 
-This plan provides a solid foundation for deploying the OctoCAT Supply Chain Management application to Azure Web Apps using infrastructure as code with Bicep and automated CI/CD with GitHub Actions.
+## References
+
+- [Container Apps multi-container networking](https://learn.microsoft.com/azure/container-apps/containers)
+- [Managed identity image pulls](https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull)
+- [ACR cloud builds](https://learn.microsoft.com/azure/container-registry/container-registry-tutorial-quick-task)
