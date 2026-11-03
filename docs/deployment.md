@@ -11,8 +11,10 @@
 
 - A Basic Azure Container Registry (ACR), with admin credentials and anonymous
   pulls disabled.
-- A user-assigned managed identity with `AcrPull` scoped only to that registry.
+- A user-assigned managed identity with `AcrPull` scoped only to that registry
+  and `Monitoring Metrics Publisher` scoped only to Application Insights.
 - A Log Analytics workspace with 30-day retention.
+- A workspace-based Application Insights resource for traces, metrics, and logs.
 - An Azure Container Apps environment using the Consumption workload profile.
 - One Container App with the existing API and Blazor Docker images.
 
@@ -21,6 +23,15 @@ HTTP transport supports Blazor Server WebSockets. The API listens on port `8081`
 and the Blazor server calls `http://localhost:8081/api/`; it has no public ingress.
 Both containers retain the Dockerfiles' non-root user and Production environment.
 Startup and readiness probes cover both containers.
+
+The deployment passes the Application Insights connection string through a
+Container App secret and configures both services to use the managed identity.
+Application Insights local authentication is disabled; the identity's scoped
+role permits authenticated ingestion of all three signals. The API and web
+services appear as separate cloud roles. See the [README](../README.md#opentelemetry-and-application-insights)
+for local configuration, sampling, and data-sensitivity considerations.
+The deployment does not automatically grant developers permission to send
+telemetry from their workstations.
 
 The app stays at one replica with single-revision mode. SQLite lives at
 `/app/data/app.db` in the API container's **ephemeral filesystem**. It is recreated
@@ -39,7 +50,7 @@ in again after a replacement. No persistent database or storage is provisioned.
   Access Control Administrator at the target scope. Contributor alone cannot
   create role assignments. Use narrower custom permissions where appropriate.
 - The `Microsoft.App`, `Microsoft.ContainerRegistry`,
-  `Microsoft.OperationalInsights`, and `Microsoft.ManagedIdentity` resource
+  `Microsoft.OperationalInsights`, `Microsoft.Insights`, and `Microsoft.ManagedIdentity` resource
   providers must be registered in the subscription. If needed, a subscription
   administrator can run `az provider register --namespace <provider> --wait`.
 
@@ -67,13 +78,14 @@ The [deployment script](../infra/deploy.ps1):
 2. Creates the resource group if absent, or preserves its existing region.
    `-Location` selects the region for application resources; it does not move
    an existing resource group.
-3. Deploys the registry, managed identity, role assignment, logs, and environment
-   with `deployApplication=false`.
+3. Deploys the registry, managed identity, role assignments, Application Insights,
+   logs, and environment with `deployApplication=false`.
 4. Builds and pushes `octocat-supply/api:<tag>` and `octocat-supply/web:<tag>` to
    the new ACR using the repository root as the Docker build context.
 5. Redeploys Bicep with `deployApplication=true`, after the images exist.
 6. Checks the public HTTPS endpoint and returns the frontend URL, app name,
-   registry name, image tag, and Azure portal resource-group URL.
+   registry and Application Insights names, image tag, and Azure portal
+   resource-group URL.
 
 By default, the image tag contains a UTC timestamp and random suffix. Redeploy
 using the same resource group and app name to update the existing application:
@@ -138,10 +150,11 @@ is needed:
    the repository, and verify the environment and repository match.
 3. Give the deployment identity **Contributor** and **Role Based Access
    Control Administrator** on the demo resource group, or equivalent narrowly
-   scoped custom roles. The latter is needed because Bicep assigns `AcrPull` to
-   the app's pull identity. Role-assignment permissions are powerful; restrict
-   the scope and who can approve or modify the workflow. The resource providers
-   listed above must already be registered.
+   scoped custom roles. The latter is needed because Bicep assigns `AcrPull`
+   and `Monitoring Metrics Publisher` to the app's managed identity.
+   Role-assignment permissions are powerful; restrict the scope and who can
+   approve or modify the workflow. The resource providers listed above must
+   already be registered.
 
 Pre-creating the demo resource group allows these permissions to be scoped to
 that group. If the workflow should create a missing group instead, the identity
@@ -206,6 +219,10 @@ az deployment group what-if --resource-group 'rg-octocat-demo' `
 - **Image pull failure:** check that both images and the chosen tag exist in
   ACR. Managed identity role propagation can take time; retry deployment after
   propagation. Do not enable ACR admin credentials as a workaround.
+- **Missing telemetry:** verify the Application Insights connection string,
+  the managed identity's scoped Monitoring Metrics Publisher assignment, and
+  outbound connectivity. Role assignments can take time to propagate. Check
+  each service's cloud role and allow time for batched telemetry to arrive.
 - **Build failure:** inspect the ACR build output. Both Dockerfiles require the
   repository root as context, not their individual project directories.
 - **Frontend check failure:** inspect both containers' logs and revision
@@ -216,7 +233,8 @@ az deployment group what-if --resource-group 'rg-octocat-demo' `
 ## Cleanup and costs
 
 The app deliberately keeps one replica running to avoid idle scale-to-zero
-resets. ACR, container compute, builds, and log ingestion may incur charges.
+resets. ACR, container compute, builds, and Application Insights/Log Analytics
+ingestion may incur charges.
 There is no production hardening, backup, or recovery mechanism.
 
 Delete the resource group **only if it is dedicated to this demo**:
@@ -230,3 +248,5 @@ az group delete --name 'rg-octocat-demo' --yes --no-wait
 - [Container Apps multi-container networking](https://learn.microsoft.com/azure/container-apps/containers)
 - [Managed identity image pulls](https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull)
 - [ACR cloud builds](https://learn.microsoft.com/azure/container-registry/container-registry-tutorial-quick-task)
+- [Azure Monitor OpenTelemetry](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable)
+- [Application Insights Microsoft Entra authentication](https://learn.microsoft.com/azure/azure-monitor/app/azure-ad-authentication)

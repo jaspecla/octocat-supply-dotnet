@@ -66,11 +66,12 @@ $deploymentArguments = @(
     '--parameters', "appName=$AppName", "location=$Location", "imageTag=$ImageTag"
 )
 
-Write-Host 'Provisioning registry, image-pull identity, logging, and Container Apps environment...'
+Write-Host 'Provisioning registry, managed identity, Application Insights, logging, and Container Apps environment...'
 $infrastructure = Invoke-AzureCli -Arguments ($deploymentArguments + @(
     'deployApplication=false', '--name', "$AppName-infrastructure"
 )) | ConvertFrom-Json
 $registryName = $infrastructure.properties.outputs.registryName.value
+$applicationInsightsName = $infrastructure.properties.outputs.applicationInsightsName.value
 
 Write-Host "Building API and web images in ACR '$registryName' with tag '$ImageTag'..."
 Invoke-AzureCli -Arguments @(
@@ -101,6 +102,7 @@ if ($response.StatusCode -ne 200) {
     FrontendUrl = $frontendUrl
     ContainerAppName = $containerAppName
     RegistryName = $registryName
+    ApplicationInsightsName = $applicationInsightsName
     ImageTag = $ImageTag
     ResourceGroupUrl = "https://portal.azure.com/#resource$($group.id)"
 }

@@ -95,6 +95,7 @@ jobs:
             "- Frontend: [$($deployment.FrontendUrl)]($($deployment.FrontendUrl))"
             "- Container app: $($deployment.ContainerAppName)"
             "- Registry: $($deployment.RegistryName)"
+            "- Application Insights: $($deployment.ApplicationInsightsName)"
             "- Image tag: $($deployment.ImageTag)"
             "- Resource group: $env:AZURE_RESOURCE_GROUP"
             '- SQLite data and browser sessions are disposable.'
