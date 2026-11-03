@@ -95,6 +95,94 @@ provisioning, cloud image builds, and verification. It stops on failed Azure CLI
 commands or failed HTTPS verification. Running the script provisions billable
 resources; merely compiling the templates does not.
 
+## Deploy with GitHub Actions
+
+The [Deploy Azure demo workflow](../.github/workflows/deploy-azure.yml) runs only
+when manually dispatched. It builds the solution and runs the tests before using
+the deployment script to provision or update the infrastructure, build both
+images in ACR, deploy the app, and verify its HTTPS endpoint. Deployments are
+serialized; every run and retry uses a distinct image tag based on the commit,
+run ID, and attempt. GitHub may cancel an older pending run when a newer one is
+queued. The frontend URL and image tag appear in the run summary. The deployment
+uses GitHub-hosted runners and does not need local Docker.
+
+The workflow exposes the same intentionally vulnerable public demo and resets
+disposable data when containers are replaced. Running it can incur Azure charges.
+Only dispatch a trusted branch, and do not use real or production data.
+
+### Configure Azure authentication
+
+Set up OpenID Connect (OIDC) for the GitHub environment; no Azure client secret
+is needed:
+
+1. Create the target demo resource group in the selected subscription and
+   region. Create a separate resource group and a **user-assigned managed
+   identity** for GitHub Actions, so deleting the demo group does not remove
+   the deployment identity. This identity is separate from the app's ACR pull
+   identity created by Bicep.
+2. On that identity, add a GitHub federated credential. For the original
+   name-based GitHub OIDC subject format, use these values, replacing
+   `<owner>/<repository>` with the actual GitHub repository:
+
+   | Field | Value |
+   |-------|-------|
+   | Issuer | `https://token.actions.githubusercontent.com` |
+   | Subject | `repo:<owner>/<repository>:environment:azure-demo` |
+   | Audience | `api://AzureADTokenExchange` |
+
+   The Azure portal's GitHub Actions credential option can construct this
+   subject by selecting the **Environment** entity and naming it `azure-demo`.
+   Repositories using GitHub's immutable subject format instead need
+   `repo:<owner>@<owner-id>/<repository>@<repository-id>:environment:azure-demo`.
+   Customized OIDC subjects may differ. Configure the exact subject emitted by
+   the repository, and verify the environment and repository match.
+3. Give the deployment identity **Contributor** and **Role Based Access
+   Control Administrator** on the demo resource group, or equivalent narrowly
+   scoped custom roles. The latter is needed because Bicep assigns `AcrPull` to
+   the app's pull identity. Role-assignment permissions are powerful; restrict
+   the scope and who can approve or modify the workflow. The resource providers
+   listed above must already be registered.
+
+Pre-creating the demo resource group allows these permissions to be scoped to
+that group. If the workflow should create a missing group instead, the identity
+also needs permission to create resource groups at subscription scope. Azure
+role assignments and federated credentials can take time to propagate.
+
+### Configure the GitHub environment
+
+1. In the repository's **Settings > Environments**, create an environment named
+   `azure-demo`. Restrict it to trusted deployment branches and configure
+   required reviewers where available. An environment is not protected merely
+   because the workflow names it.
+2. Add these environment **secrets**:
+
+   | Secret | Value |
+   |--------|-------|
+   | `AZURE_CLIENT_ID` | Client ID of the GitHub Actions managed identity |
+   | `AZURE_TENANT_ID` | Microsoft Entra tenant ID |
+   | `AZURE_SUBSCRIPTION_ID` | Target Azure subscription ID |
+
+3. Add these environment **variables**:
+
+   | Variable | Value |
+   |----------|-------|
+   | `AZURE_RESOURCE_GROUP` | Target demo resource group; required |
+   | `AZURE_LOCATION` | Resource region; optional, defaults to `eastus2` |
+   | `AZURE_APP_NAME` | App name; optional, defaults to `octocat-supply` |
+
+   Use the same region and app name for redeployments. The app name must be
+   3-16 lowercase letters, digits, or internal hyphens, starting with a letter
+   and ending with a letter or digit.
+4. Once the workflow is present on the default branch, open **Actions > Deploy
+   Azure demo > Run workflow**, select a trusted branch, and run it. Approve the
+   deployment if the environment requires approval. A failing build, test,
+   provisioning step, image build, or endpoint check fails the workflow.
+
+See [GitHub's Azure OIDC guide](https://docs.github.com/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-azure)
+for further details. Deleting the demo resource group does not delete the
+separate GitHub Actions identity; remove that identity and its federated
+credential separately when they are no longer needed.
+
 ## Validate without deploying
 
 ```powershell

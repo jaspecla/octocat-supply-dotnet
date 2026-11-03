@@ -96,10 +96,12 @@ az account set --subscription '<subscription-id>'
 .\infra\deploy.ps1 -ResourceGroup 'rg-octocat-demo' -Location 'eastus2'
 ```
 
-Requires PowerShell 7+, Azure CLI with Bicep, and permissions to create resources
-and role assignments. This configuration exposes the intentionally vulnerable
-demo over public HTTPS and uses **disposable SQLite data**. Do not use real data
-or treat it as production-ready. See the guide for prerequisites, costs, and cleanup.
+The local script requires PowerShell 7+, Azure CLI with Bicep, and permissions to
+create resources and role assignments. This configuration exposes the
+intentionally vulnerable demo over public HTTPS and uses **disposable SQLite
+data**. Do not use real data or treat it as production-ready. The guide also
+explains how to configure and run the manual GitHub Actions deployment with
+Azure OIDC. See it for prerequisites, costs, and cleanup.
 
 ## Project Structure
 
