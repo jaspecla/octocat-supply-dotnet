@@ -45,12 +45,12 @@ public static class TelemetryExtensions
         var credential = CreateCredential(builder.Configuration, authentication);
         var telemetry = builder.Services.AddOpenTelemetry();
 
+        telemetry.UseAzureMonitor();
         if (configureTracing is not null)
         {
             telemetry.WithTracing(configureTracing);
         }
 
-        telemetry.UseAzureMonitor();
         builder.Services.Configure<AzureMonitorOptions>(options =>
         {
             options.ConnectionString = connectionString;

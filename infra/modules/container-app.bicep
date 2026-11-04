@@ -121,6 +121,11 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
               value: 'http://localhost:8081/api/'
             }
             {
+              // INTENTIONAL DEMO BUG DEMO-HOME-001; see docs/application-insights-demo.md.
+              name: 'Demo__SlowProductExploration'
+              value: 'true'
+            }
+            {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               secretRef: 'application-insights-connection-string'
             }

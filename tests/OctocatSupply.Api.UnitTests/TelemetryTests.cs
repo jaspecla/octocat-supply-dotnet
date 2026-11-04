@@ -20,6 +20,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OctocatSupply.Api;
 using OctocatSupply.Api.Data;
 using OctocatSupply.Observability;
+using OctocatSupply.Web;
+using OctocatSupply.Web.Services;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -271,6 +273,50 @@ public class TelemetryTests
                 .Any(metric => metric.GetProperty("name").GetString() == "octocat.test.requests")));
         Assert.IsTrue(exported.Any(item => GetBaseType(item) == "MessageData" &&
             GetBaseData(item).GetProperty("message").GetString() == "Telemetry test message"));
+    }
+
+    [TestMethod]
+    public async Task WebDemoTelemetry_ExportsInteractionCauseAndCorrelatedLogs()
+    {
+        var builder = CreateBuilder(testConnectionString);
+        builder.Configuration["Demo:SlowProductExploration"] = "true";
+        builder.AddWebTelemetry();
+        builder.Services.AddScoped<ProductExplorationService>();
+        string traceId;
+        var activities = new List<Activity>();
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(tracing => tracing.AddInMemoryExporter(activities));
+
+        using (var host = builder.Build())
+        {
+            await host.StartAsync();
+            using var scope = host.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<ProductExplorationService>().PrepareAsync();
+            Assert.IsTrue(host.Services.GetRequiredService<TracerProvider>().ForceFlush());
+            var interaction = activities.Single(activity => activity.OperationName == "Home.ExploreProducts");
+            traceId = interaction.TraceId.ToString();
+            Assert.IsTrue(interaction.Recorded, "Demo interactions must not be sampled away.");
+            await host.StopAsync();
+        }
+
+        var operation = GetExportedItems().Where(item =>
+            item.GetProperty("tags").TryGetProperty("ai.operation.id", out var id) &&
+            id.GetString() == traceId).ToArray();
+        var request = operation.Single(item => GetBaseType(item) == "RequestData");
+        Assert.AreEqual("Home.ExploreProducts", GetBaseData(request).GetProperty("name").GetString());
+        var dependency = operation.Single(item => GetBaseType(item) == "RemoteDependencyData");
+        var cause = GetBaseData(dependency);
+        Assert.AreEqual("ProductCatalog.Warmup", cause.GetProperty("name").GetString());
+        Assert.IsTrue(TimeSpan.Parse(cause.GetProperty("duration").GetString()!) >= TimeSpan.FromSeconds(5));
+        Assert.AreEqual(ProductExplorationService.DefectId,
+            cause.GetProperty("properties").GetProperty("demo.defect_id").GetString());
+        Assert.AreEqual(GetBaseData(request).GetProperty("id").GetString(),
+            dependency.GetProperty("tags").GetProperty("ai.operation.parentId").GetString());
+        var messages = operation.Where(item => GetBaseType(item) == "MessageData").ToArray();
+        Assert.HasCount(2, messages);
+        Assert.IsTrue(messages.All(item =>
+            item.GetProperty("tags").GetProperty("ai.operation.parentId").GetString() ==
+            cause.GetProperty("id").GetString()));
     }
 
     [TestMethod]

@@ -1,10 +1,10 @@
-using OctocatSupply.Observability;
+using OctocatSupply.Web;
 using OctocatSupply.Web.Components;
 using OctocatSupply.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddApplicationTelemetry("octocat-supply-web");
+builder.AddWebTelemetry();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -12,6 +12,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ProductExplorationService>();
 builder.Services.AddHttpClient<ApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ApiBaseUrl") ?? "http://localhost:3001/api/");

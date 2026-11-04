@@ -97,6 +97,10 @@ $response = Invoke-WebRequest -Uri $frontendUrl -TimeoutSec 30 -MaximumRetryCoun
 if ($response.StatusCode -ne 200) {
     throw "Frontend verification failed: HTTP $($response.StatusCode)."
 }
+$scriptResponse = Invoke-WebRequest -Uri "$frontendUrl/_framework/blazor.web.js" -TimeoutSec 30
+if ($scriptResponse.StatusCode -ne 200 -or $scriptResponse.Headers['Content-Type'] -notmatch 'javascript') {
+    throw 'Blazor startup script verification failed; the homepage alone does not prove interactivity.'
+}
 
 [pscustomobject]@{
     FrontendUrl = $frontendUrl
