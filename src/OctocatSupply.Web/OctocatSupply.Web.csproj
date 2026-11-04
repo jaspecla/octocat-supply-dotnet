@@ -7,4 +7,8 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OctocatSupply.Observability\OctocatSupply.Observability.csproj" />
+  </ItemGroup>
+
 </Project>

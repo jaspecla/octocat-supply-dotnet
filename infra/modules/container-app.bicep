@@ -4,6 +4,9 @@ param tags object
 param environmentId string
 param registryServer string
 param pullIdentityId string
+param pullIdentityClientId string
+@secure()
+param applicationInsightsConnectionString string
 param imageTag string
 
 resource app 'Microsoft.App/containerApps@2025-01-01' = {
@@ -21,6 +24,12 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
     workloadProfileName: 'Consumption'
     configuration: {
       activeRevisionsMode: 'Single'
+      secrets: [
+        {
+          name: 'application-insights-connection-string'
+          value: applicationInsightsConnectionString
+        }
+      ]
       registries: [
         {
           server: registryServer
@@ -56,6 +65,18 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
             {
               name: 'DbFile'
               value: '/app/data/app.db'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              secretRef: 'application-insights-connection-string'
+            }
+            {
+              name: 'AzureMonitor__Authentication'
+              value: 'ManagedIdentity'
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: pullIdentityClientId
             }
           ]
           resources: {
@@ -98,6 +119,18 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
             {
               name: 'ApiBaseUrl'
               value: 'http://localhost:8081/api/'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              secretRef: 'application-insights-connection-string'
+            }
+            {
+              name: 'AzureMonitor__Authentication'
+              value: 'ManagedIdentity'
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: pullIdentityClientId
             }
           ]
           resources: {

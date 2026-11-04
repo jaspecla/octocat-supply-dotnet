@@ -43,6 +43,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/OctocatSupply.Api/OctocatSupply.Api.csproj" />
+    <Project Path="src/OctocatSupply.Observability/OctocatSupply.Observability.csproj" />
     <Project Path="src/OctocatSupply.Web/OctocatSupply.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">

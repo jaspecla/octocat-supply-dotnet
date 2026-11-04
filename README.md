@@ -41,6 +41,53 @@ The frontend will start at `http://localhost:5000` (or the port shown in console
 dotnet build
 ```
 
+### OpenTelemetry and Application Insights
+
+The API and Blazor server collect OpenTelemetry traces, metrics, and
+`Microsoft.Extensions.Logging` logs when an Application Insights connection
+string is configured. Without one, Azure Monitor telemetry is disabled and
+existing console logging and local startup are unchanged. The services use
+distinct Application Insights role names, `octocat-supply-api` and
+`octocat-supply-web`; HTTP trace context propagates between them. The API also
+collects SQLite dependency spans through the prerelease EF Core instrumentation.
+SQL statement text and parameter values are removed from those spans.
+
+Set `APPLICATIONINSIGHTS_CONNECTION_STRING` in **both** processes before
+starting them. For example, in each PowerShell terminal:
+
+```powershell
+$env:APPLICATIONINSIGHTS_CONNECTION_STRING = '<your Application Insights connection string>'
+# Required if the Application Insights resource requires Microsoft Entra authentication:
+# $env:AzureMonitor__Authentication = 'DefaultAzureCredential'
+dotnet run --project .\src\OctocatSupply.Api
+```
+
+In the other terminal, use `.\src\OctocatSupply.Web` as the project. Do not
+commit the connection string. For Entra authentication, sign in with `az login`
+and have an administrator grant your account the **Monitoring Metrics
+Publisher** role on the Application Insights resource.
+
+Optional configuration:
+
+- `AzureMonitor__Authentication`: `None` (default, for resources permitting
+  local authentication), `DefaultAzureCredential` (local development), or
+  `ManagedIdentity` (Azure). With `ManagedIdentity`, set `AZURE_CLIENT_ID`
+  for a user-assigned identity; omit it for a system-assigned identity.
+- `OTEL_SERVICE_NAME`: override a process's default service name. Use different
+  values for the API and web processes to keep their roles distinct.
+- `AzureMonitor__EnableLiveMetrics`: defaults to `true`.
+- `AzureMonitor__DisableOfflineStorage`: defaults to `false`; set to `true` to
+  disable local retry storage for telemetry that cannot be sent.
+- `APPLICATIONINSIGHTS_SDKSTATS_DISABLED`: set to `true` to disable Azure
+  Monitor SDK health statistics without disabling application telemetry.
+
+The Azure Monitor distro applies rate-limited trace sampling by default. See
+the [sampling configuration](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-sampling)
+to adjust it. Telemetry ingestion can incur charges. Logs, URLs, exception
+messages, and custom attributes may contain sensitive data even though SQLite
+span query text is removed; use only disposable demo data and review logging
+levels and access to your Application Insights resource.
+
 ### Running in containers
 
 Install Docker with Linux container support. Run these commands from the repository root
@@ -69,7 +116,9 @@ HTTP port `8080`. Configure them using environment variables:
   Bind-mounted directories must be writable by the image's `app` user.
 - **Frontend**: Set `ApiBaseUrl` to the backend URL, including the trailing `/api/`.
 - **Both**: `ASPNETCORE_ENVIRONMENT` defaults to `Production`. Swagger is disabled
-  unless the API runs with `ASPNETCORE_ENVIRONMENT=Development`.
+  unless the API runs with `ASPNETCORE_ENVIRONMENT=Development`. Pass the
+  telemetry environment variables to each container to enable Application
+  Insights; do not put connection strings in image builds.
 
 For hosted deployments, terminate HTTPS at your ingress/reverse proxy and enable
 WebSockets for Blazor Server. Frontend data-protection keys should be persisted
@@ -113,6 +162,7 @@ src/
 │   ├── Models/                 # Entity models with EF Core annotations
 │   └── Repositories/           # Repository pattern with interfaces
 │
+├── OctocatSupply.Observability/ # Shared OpenTelemetry configuration
 └── OctocatSupply.Web/          # Blazor Server Frontend
     ├── Components/
     │   ├── Layout/             # MainLayout, NavMenu, Footer

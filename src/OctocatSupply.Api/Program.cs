@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using OctocatSupply.Api;
 using OctocatSupply.Api.Data;
 using OctocatSupply.Api.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddApiTelemetry();
 
 // Add services to the container
 builder.Services.AddControllers()

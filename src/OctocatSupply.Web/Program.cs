@@ -1,7 +1,10 @@
+using OctocatSupply.Observability;
 using OctocatSupply.Web.Components;
 using OctocatSupply.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddApplicationTelemetry("octocat-supply-web");
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
