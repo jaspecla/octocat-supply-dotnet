@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OctocatSupply.Api\OctocatSupply.Api.csproj" />
+    <ProjectReference Include="..\..\src\OctocatSupply.Web\OctocatSupply.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -24,6 +24,11 @@ and the Blazor server calls `http://localhost:8081/api/`; it has no public ingre
 Both containers retain the Dockerfiles' non-root user and Production environment.
 Startup and readiness probes cover both containers.
 
+The web container also enables the intentional five-second **Explore Products**
+latency defect, `DEMO-HOME-001`, for the Application Insights MCP demonstration.
+It is gated by `Demo__SlowProductExploration`; preserve it unless explicitly
+asked to disable it. See the [demo runbook](application-insights-demo.md).
+
 The deployment passes the Application Insights connection string through a
 Container App secret and configures both services to use the managed identity.
 Application Insights local authentication is disabled; the identity's scoped
@@ -83,7 +88,7 @@ The [deployment script](../infra/deploy.ps1):
 4. Builds and pushes `octocat-supply/api:<tag>` and `octocat-supply/web:<tag>` to
    the new ACR using the repository root as the Docker build context.
 5. Redeploys Bicep with `deployApplication=true`, after the images exist.
-6. Checks the public HTTPS endpoint and returns the frontend URL, app name,
+6. Checks the public HTTPS homepage and Blazor startup script, then returns the frontend URL, app name,
    registry and Application Insights names, image tag, and Azure portal
    resource-group URL.
 

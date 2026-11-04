@@ -4,6 +4,13 @@ A .NET port of the OctoCAT Supply Chain demo application, built with ASP.NET Cor
 
 > ⚠️ **WARNING**: This application contains intentional security vulnerabilities. Do NOT deploy to production.
 
+> **Intentional latency demo (DEMO-HOME-001):** The deployed demo's home-page
+> **Explore Products** button waits five seconds before navigating. This is
+> deliberate, not a regression to fix. Preserve the delay and its telemetry
+> unless explicitly asked to remove it. See the [Application Insights MCP demo
+> runbook](docs/application-insights-demo.md) for reproduction, diagnosis, and
+> the opt-out switch.
+
 ## Architecture
 
 - **Backend**: ASP.NET Core Web API (.NET 10) with Entity Framework Core + SQLite

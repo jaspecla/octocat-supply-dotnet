@@ -10,6 +10,7 @@ COPY src/OctocatSupply.Observability/ src/OctocatSupply.Observability/
 RUN dotnet publish "src/OctocatSupply.Web/OctocatSupply.Web.csproj" \
     --configuration Release --no-restore --output /app/publish \
     /p:UseAppHost=false
+RUN test -s /app/publish/wwwroot/_framework/blazor.web.js
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
